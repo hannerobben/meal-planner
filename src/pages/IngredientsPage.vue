@@ -14,7 +14,13 @@ const categoryOptions = INGREDIENT_CATEGORIES.map((c) => ({ label: c, value: c }
 
 // ── Sort ─────────────────────────────────────────────────────────────────────
 
-type SortKey = 'name' | 'category' | 'calories_per_100' | 'protein_g_per_100' | 'carbs_g_per_100' | 'fat_g_per_100';
+type SortKey =
+    | 'name'
+    | 'category'
+    | 'calories_per_100'
+    | 'protein_g_per_100'
+    | 'carbs_g_per_100'
+    | 'fat_g_per_100';
 
 const sortOptions: { label: string; value: SortKey }[] = [
     { label: 'Name', value: 'name' },
@@ -22,7 +28,7 @@ const sortOptions: { label: string; value: SortKey }[] = [
     { label: 'kcal', value: 'calories_per_100' },
     { label: 'Protein', value: 'protein_g_per_100' },
     { label: 'Carbs', value: 'carbs_g_per_100' },
-    { label: 'Fat', value: 'fat_g_per_100' },
+    { label: 'Fat', value: 'fat_g_per_100' }
 ];
 
 const sortKey = ref<SortKey>('name');
@@ -39,9 +45,10 @@ const sortedIngredients = computed(() => {
         .sort((a, b) => {
             const av = a[key];
             const bv = b[key];
-            const cmp = typeof av === 'string'
-                ? (av as string).localeCompare(bv as string)
-                : (av as number) - (bv as number);
+            const cmp =
+                typeof av === 'string'
+                    ? (av as string).localeCompare(bv as string)
+                    : (av as number) - (bv as number);
             return sortAsc.value ? cmp : -cmp;
         });
 });
@@ -81,21 +88,6 @@ async function saveEdit() {
         showEditDialog.value = false;
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
-    }
-}
-
-// ── Remove ───────────────────────────────────────────────────────────────────
-
-async function removeIngredient(id: string) {
-    try {
-        await store.remove(id);
-    } catch (e) {
-        toast.add({
-            severity: 'error',
-            summary: 'Cannot delete',
-            detail: 'This ingredient is used in one or more recipes.',
-            life: 5000
-        });
     }
 }
 
@@ -173,7 +165,8 @@ async function saveNew() {
                 class="category-chip"
                 :class="[cat, { active: selectedCategory === cat }]"
                 @click="selectedCategory = selectedCategory === cat ? null : cat"
-            >{{ cat }}</span>
+                >{{ cat }}</span
+            >
         </div>
 
         <div v-if="store.loading" style="padding: 20px">Loading…</div>
@@ -303,7 +296,9 @@ async function saveNew() {
     justify-content: space-between;
     align-items: center;
 
-    h2 { margin: 0; }
+    h2 {
+        margin: 0;
+    }
 }
 
 .sort-bar {
@@ -311,7 +306,9 @@ async function saveNew() {
     justify-content: space-between;
     gap: 8px;
 
-    :deep(.p-iconfield) { flex: 1; }
+    :deep(.p-iconfield) {
+        flex: 1;
+    }
 }
 
 .sort-controls {
@@ -340,14 +337,26 @@ async function saveNew() {
     border: 2px solid transparent;
     user-select: none;
 
-    &.fruit      { background-color: #ffd6a5; }
-    &.vegetable  { background-color: #b5ead7; }
-    &.meat       { background-color: #ffb3ba; }
-    &.dairy      { background-color: #b3d9ff; }
+    &.fruit {
+        background-color: #ffd6a5;
+    }
+    &.vegetable {
+        background-color: #b5ead7;
+    }
+    &.meat {
+        background-color: #ffb3ba;
+    }
+    &.dairy {
+        background-color: #b3d9ff;
+    }
 
-    &.other      { background-color: #e0e0e0; }
+    &.other {
+        background-color: #e0e0e0;
+    }
 
-    &.active { border-color: #555; }
+    &.active {
+        border-color: #555;
+    }
 }
 
 .ingredient-list {
