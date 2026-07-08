@@ -1,0 +1,13 @@
+node_modules
+dist
+.idea
+.env.local
+.env.*.local
+*.local
+.DS_Store
+.vercel
+
+# claude
+*.md
+.superpowers
+.claude
