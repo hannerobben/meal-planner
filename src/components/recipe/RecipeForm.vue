@@ -30,6 +30,7 @@ const typeOptions = MEAL_TYPES.map((t) => ({ label: t.charAt(0).toUpperCase() + 
 
 const recipeId = ref<string | null>(props.recipe?.id ?? null);
 const currentImageUrl = ref<string | null>(props.recipe?.image_url ?? null);
+let _pendingCreate: Promise<string | null> | null = null;
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const pendingImageFile = ref<File | null>(null);
@@ -138,14 +139,20 @@ async function saveNew() {
 async function ensureRecipeExists(): Promise<string | null> {
     if (recipeId.value) return recipeId.value;
     if (!name.value.trim()) return null;
-    try {
-        const created = await RecipeApi.create(authStore.householdId!, name.value.trim(), type.value, notes.value || null);
-        recipeId.value = created.id;
-        return created.id;
-    } catch (e) {
-        toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
-        return null;
-    }
+    if (_pendingCreate) return _pendingCreate;
+    _pendingCreate = RecipeApi.create(authStore.householdId!, name.value.trim(), type.value, notes.value || null)
+        .then((created) => {
+            recipeId.value = created.id;
+            return created.id;
+        })
+        .catch((e) => {
+            toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
+            return null;
+        })
+        .finally(() => {
+            _pendingCreate = null;
+        });
+    return _pendingCreate;
 }
 
 async function saveRecipe() {

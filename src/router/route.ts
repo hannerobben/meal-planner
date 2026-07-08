@@ -33,7 +33,7 @@ const routes = [
 ];
 
 const router = createRouter({
-    history: createWebHistory('/mealplanner/'),
+    history: createWebHistory('/meal-planner/'),
     routes
 });
 
