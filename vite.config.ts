@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url';
 import svgLoader from 'vite-svg-loader';
 
 export default defineConfig({
-    base: '/mealplanner/',
+    base: '/meal-planner/',
     plugins: [
         vue(),
         svgLoader(),
