@@ -1,0 +1,6 @@
+export interface AppUserContract {
+    id: string;
+    household_id: string;
+    display_name: string;
+    created_at: string;
+}
