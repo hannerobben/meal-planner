@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MealPlanEntryContract } from '../../model/meal-plan-entry.contract.ts';
+import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entry.contract.ts';
 import DayColumn from './DayColumn.vue';
 import dayjs from 'dayjs';
 
@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     slotClick: [date: string, entry: MealPlanEntryContract];
-    addClick: [date: string];
+    addClick: [date: string, mealType: MealType];
 }>();
 
 function getDates(): string[] {
@@ -32,7 +32,7 @@ function entriesForDate(date: string) {
             :date="date"
             :entries="entriesForDate(date)"
             @slotClick="(date, entry) => emit('slotClick', date, entry)"
-            @addClick="(date) => emit('addClick', date)"
+            @addClick="(date, mealType) => emit('addClick', date, mealType)"
         />
     </div>
 </template>

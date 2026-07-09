@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useIngredientStore } from '../stores/ingredient.store.ts';
 import { INGREDIENT_CATEGORIES, type IngredientCategory } from '../model/ingredient.contract.ts';
+import { INGREDIENT_CATEGORY_COLORS } from '../model/type-colors.ts';
 import type { IngredientContract } from '../model/ingredient.contract.ts';
 import type { IngredientInput } from '../supabase/ingredient.api.ts';
 import IngredientItem from '../components/ingredients/IngredientItem.vue';
@@ -163,7 +164,8 @@ async function saveNew() {
                 v-for="cat in INGREDIENT_CATEGORIES"
                 :key="cat"
                 class="category-chip"
-                :class="[cat, { active: selectedCategory === cat }]"
+                :class="{ active: selectedCategory === cat }"
+                :style="{ backgroundColor: INGREDIENT_CATEGORY_COLORS[cat] }"
                 @click="selectedCategory = selectedCategory === cat ? null : cat"
                 >{{ cat }}</span
             >
@@ -189,7 +191,7 @@ async function saveNew() {
             v-model:visible="showEditDialog"
             header="Edit Ingredient"
             modal
-            style="width: 360px"
+            style="width: 360px; max-width: 96vw"
         >
             <div class="form">
                 <div class="field">
@@ -235,7 +237,12 @@ async function saveNew() {
         </Dialog>
 
         <!-- New ingredient dialog -->
-        <Dialog v-model:visible="showNewDialog" header="New Ingredient" modal style="width: 360px">
+        <Dialog
+            v-model:visible="showNewDialog"
+            header="New Ingredient"
+            modal
+            style="width: 360px; max-width: 96vw"
+        >
             <div class="form">
                 <div class="field">
                     <label>Name *</label>
@@ -305,9 +312,20 @@ async function saveNew() {
     display: flex;
     justify-content: space-between;
     gap: 8px;
+    min-width: 0;
 
     :deep(.p-iconfield) {
         flex: 1;
+        min-width: 0;
+    }
+
+    :deep(.p-iconfield .p-inputtext) {
+        width: 100%;
+        min-width: 0;
+    }
+
+    :deep(.p-inputtext) {
+        max-width: 180px;
     }
 }
 
@@ -315,6 +333,7 @@ async function saveNew() {
     display: flex;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
 }
 
 .sort-dir-btn {
@@ -329,30 +348,12 @@ async function saveNew() {
 
 .category-chip {
     text-transform: capitalize;
-    padding: 4px 12px;
+    padding: 4px 10px;
     border-radius: 30px;
     font-size: 0.78em;
     cursor: pointer;
-    background-color: #e0e0e0;
     border: 2px solid transparent;
     user-select: none;
-
-    &.fruit {
-        background-color: #ffd6a5;
-    }
-    &.vegetable {
-        background-color: #b5ead7;
-    }
-    &.meat {
-        background-color: #ffb3ba;
-    }
-    &.dairy {
-        background-color: #b3d9ff;
-    }
-
-    &.other {
-        background-color: #e0e0e0;
-    }
 
     &.active {
         border-color: #555;

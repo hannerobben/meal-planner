@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RecipeContract } from '../../model/recipe.contract.ts';
 import { computed } from 'vue';
+import { MEAL_TYPE_COLORS } from '../../model/type-colors.ts';
 
 const props = defineProps<{ recipe: RecipeContract }>();
 const emit = defineEmits<{ select: [] }>();
@@ -31,7 +32,7 @@ const totals = computed(() =>
     >
         <div class="top">
             <span class="recipe-name">{{ recipe.name }}</span>
-            <span class="type-badge" :class="recipe.type">{{ recipe.type }}</span>
+            <span class="type-badge" :style="{ backgroundColor: MEAL_TYPE_COLORS[recipe.type] }">{{ recipe.type }}</span>
         </div>
         <div class="display-row">
             <div class="meta">
@@ -68,6 +69,7 @@ const totals = computed(() =>
     flex-direction: column;
     justify-content: flex-end;
     gap: 20px;
+    min-height: fit-content;
 
     &:hover {
         background: #f9f9f9;
@@ -126,20 +128,6 @@ const totals = computed(() =>
     font-size: 0.6em;
     position: relative;
     z-index: 1;
-    background-color: #e0e0e0;
-
-    &.breakfast {
-        background-color: #ffd6a5;
-    }
-    &.lunch {
-        background-color: #b5ead7;
-    }
-    &.dinner {
-        background-color: #ffb3ba;
-    }
-    &.snack {
-        background-color: #fffacd;
-    }
 }
 
 .meta {

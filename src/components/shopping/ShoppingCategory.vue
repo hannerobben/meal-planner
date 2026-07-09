@@ -3,7 +3,7 @@ import type { CategoryGroup } from '../../stores/shopping.store.ts';
 import type { IngredientCategory } from '../../model/ingredient.contract.ts';
 import ShoppingItem from './ShoppingItem.vue';
 
-defineProps<{ group: CategoryGroup }>();
+defineProps<{ group: CategoryGroup; multiplier: 1 | 2 }>();
 defineEmits<{ toggle: [name: string, unit: string, category: IngredientCategory] }>();
 </script>
 
@@ -16,6 +16,7 @@ defineEmits<{ toggle: [name: string, unit: string, category: IngredientCategory]
             v-for="item in group.items"
             :key="`${item.name}|${item.unit}`"
             :item="item"
+            :multiplier="multiplier"
             @toggle="$emit('toggle', item.name, item.unit, item.category)"
         />
     </div>

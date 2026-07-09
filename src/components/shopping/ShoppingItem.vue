@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AggregatedItem } from '../../stores/shopping.store.ts';
 
-defineProps<{ item: AggregatedItem }>();
+defineProps<{ item: AggregatedItem; multiplier: 1 | 2 }>();
 defineEmits<{ toggle: [] }>();
 </script>
 
@@ -10,7 +10,7 @@ defineEmits<{ toggle: [] }>();
         <Checkbox :modelValue="item.checked" @update:modelValue="$emit('toggle')" @click.stop binary />
         <div class="item-info">
             <span class="item-name">{{ item.name }}</span>
-            <span class="item-qty">{{ item.quantity }} {{ item.unit }}</span>
+            <span class="item-qty">{{ item.quantity * multiplier }} {{ item.unit }}</span>
         </div>
     </div>
 </template>

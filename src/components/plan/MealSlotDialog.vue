@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entry.contract.ts';
-import { MEAL_TYPES } from '../../model/meal-plan-entry.contract.ts';
 import type { RecipeContract } from '../../model/recipe.contract.ts';
+import { MEAL_TYPE_COLORS } from '../../model/type-colors.ts';
 
 const props = defineProps<{
     visible: boolean;
     entry: MealPlanEntryContract | undefined;
     date: string;
     recipes: RecipeContract[];
+    initialMealType?: MealType;
 }>();
 
 const emit = defineEmits<{
@@ -17,34 +18,15 @@ const emit = defineEmits<{
     remove: [];
 }>();
 
-const mode = ref<'recipe' | 'text'>('recipe');
 const selectedRecipeId = ref<string | null>(null);
-const freeText = ref('');
-const selectedMealType = ref<MealType>('breakfast');
 
-const mealTypeOptions = MEAL_TYPES.map((t) => ({
-    label: t.charAt(0).toUpperCase() + t.slice(1),
-    value: t,
-}));
+const displayMealType = computed(() => props.entry?.meal_type ?? props.initialMealType ?? 'breakfast');
 
 watch(
     () => props.visible,
     (v) => {
         if (!v) return;
-        if (props.entry?.recipe_id) {
-            mode.value = 'recipe';
-            selectedRecipeId.value = props.entry.recipe_id;
-            freeText.value = '';
-        } else if (props.entry?.free_text) {
-            mode.value = 'text';
-            freeText.value = props.entry.free_text;
-            selectedRecipeId.value = null;
-        } else {
-            mode.value = 'recipe';
-            selectedRecipeId.value = null;
-            freeText.value = '';
-            selectedMealType.value = 'breakfast';
-        }
+        selectedRecipeId.value = props.entry?.recipe_id ?? null;
     }
 );
 
@@ -52,13 +34,11 @@ const recipeOptions = computed(() =>
     props.recipes.map((r) => ({ label: r.name, value: r.id }))
 );
 
-const canSave = computed(() =>
-    mode.value === 'recipe' ? !!selectedRecipeId.value : !!freeText.value.trim()
-);
+const canSave = computed(() => !!selectedRecipeId.value);
 
 function handleSave() {
-    const mealType = props.entry ? null : selectedMealType.value;
-    emit('save', mealType, mode.value === 'recipe' ? selectedRecipeId.value : null, mode.value === 'text' ? freeText.value.trim() : null);
+    const mealType = props.entry ? null : displayMealType.value;
+    emit('save', mealType, selectedRecipeId.value, null);
     emit('update:visible', false);
 }
 
@@ -74,35 +54,15 @@ const title = computed(() =>
 <template>
     <Dialog :visible="visible" @update:visible="$emit('update:visible', $event)" :header="title" modal style="width: 340px">
         <div class="dialog-body">
-            <Select
-                v-if="!entry"
-                v-model="selectedMealType"
-                :options="mealTypeOptions"
-                optionLabel="label"
-                optionValue="value"
-                style="width: 100%"
-            />
-
-            <div class="mode-toggle">
-                <Button label="From recipe" :outlined="mode !== 'recipe'" @click="mode = 'recipe'" size="small" />
-                <Button label="Free text" :outlined="mode !== 'text'" @click="mode = 'text'" size="small" />
-            </div>
+            <span class="type-badge" :style="{ backgroundColor: MEAL_TYPE_COLORS[displayMealType] }">{{ displayMealType }}</span>
 
             <Select
-                v-if="mode === 'recipe'"
                 v-model="selectedRecipeId"
                 :options="recipeOptions"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Choose a recipe…"
                 filter
-                style="width: 100%"
-            />
-
-            <InputText
-                v-else
-                v-model="freeText"
-                placeholder="e.g. Leftovers, takeaway…"
                 style="width: 100%"
             />
         </div>
@@ -132,9 +92,12 @@ const title = computed(() =>
     padding: 4px 0 8px;
 }
 
-.mode-toggle {
-    display: flex;
-    gap: 8px;
+.type-badge {
+    text-transform: capitalize;
+    padding: 2px 10px;
+    border-radius: 30px;
+    font-size: 0.6em;
+    align-self: flex-start;
 }
 
 .dialog-footer {

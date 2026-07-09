@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { usePlanStore } from '../stores/plan.store.ts';
 import { useRecipeStore } from '../stores/recipe.store.ts';
+import { useAuthStore } from '../stores/auth.store.ts';
 import WeekGrid from '../components/plan/WeekGrid.vue';
 import MealSlotDialog from '../components/plan/MealSlotDialog.vue';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
+import { calculateBMR, calculateTDEE, calculateMacros, ActivityLevel, FatLossGoal } from '../utils/nutrition.ts';
 import dayjs from 'dayjs';
 
 const planStore = usePlanStore();
@@ -14,18 +16,37 @@ const toast = useToast();
 const recipeStore = useRecipeStore();
 const { entries, weekStart, loading } = storeToRefs(planStore);
 const { recipes } = storeToRefs(recipeStore);
+const { appUser } = storeToRefs(useAuthStore());
+
+const targetMacros = computed(() => {
+    const u = appUser.value;
+    if (!u?.weight_kg || !u?.height_cm || !u?.age || !u?.sex || !u?.activity_level) return null;
+    const bmr = calculateBMR({ weight_kg: u.weight_kg, height_cm: u.height_cm, age: u.age, sex: u.sex });
+    const tdee = calculateTDEE(bmr, u.activity_level as ActivityLevel);
+    return { tdee, ...calculateMacros({ tdee, weight_kg: u.weight_kg, protein_per_kg: u.protein_per_kg ?? undefined, fat_loss_goal: (u.fat_loss_goal as FatLossGoal) ?? undefined }) };
+});
+
+function trafficLight(actual: number, target: number | undefined, lo: number, hi: number): string {
+    if (!target) return '';
+    const ratio = actual / target;
+    if (ratio >= lo && ratio <= hi) return 'tl-green';
+    if (ratio >= 2 * lo - 1 && ratio <= 2 * hi - 1) return 'tl-orange';
+    return 'tl-red';
+}
 
 const dialogVisible = ref(false);
 const dialogDate = ref('');
 const dialogEntry = ref<MealPlanEntryContract | undefined>(undefined);
+const dialogInitialMealType = ref<MealType>('breakfast');
 
 onMounted(async () => {
     await Promise.all([planStore.fetchWeek(), recipeStore.fetchAll()]);
 });
 
-function openNew(date: string) {
+function openNew(date: string, mealType: MealType) {
     dialogDate.value = date;
     dialogEntry.value = undefined;
+    dialogInitialMealType.value = mealType;
     dialogVisible.value = true;
 }
 
@@ -102,22 +123,22 @@ function macrosForDate(date: string) {
             :weekStart="weekStart"
             :entries="entries"
             @slotClick="(date, entry) => openEntry(date, entry)"
-            @addClick="(date) => openNew(date)"
+            @addClick="(date, mealType) => openNew(date, mealType)"
         />
         <div v-if="!loading" class="macro-row">
             <div v-for="date in getDates()" :key="date" class="macro-cell">
-                <template v-if="macrosForDate(date).kcal">
-                    <span class="m-kcal"
-                        >{{ Math.round(macrosForDate(date).kcal) }}<em>kcal</em></span
-                    >
-                    <span class="m-protein"
-                        >{{ Math.round(macrosForDate(date).protein) }}<em>P</em></span
-                    >
-                    <span class="m-carbs"
-                        >{{ Math.round(macrosForDate(date).carbs) }}<em>C</em></span
-                    >
-                    <span class="m-fat">{{ Math.round(macrosForDate(date).fat) }}<em>F</em></span>
-                </template>
+                <span :class="macrosForDate(date).kcal ? ['m-kcal', trafficLight(macrosForDate(date).kcal, targetMacros?.target_kcal, 0.95, 1.05)] : 'm-empty'"
+                    >{{ Math.round(macrosForDate(date).kcal) }}<em>kcal</em></span
+                >
+                <span :class="macrosForDate(date).kcal ? ['m-protein', trafficLight(macrosForDate(date).protein, targetMacros?.protein_g, 0.90, 1.20)] : 'm-empty'"
+                    >{{ Math.round(macrosForDate(date).protein) }}<em>P</em></span
+                >
+                <span :class="macrosForDate(date).kcal ? ['m-carbs', trafficLight(macrosForDate(date).carbs, targetMacros?.carbs_g, 0.85, 1.15)] : 'm-empty'"
+                    >{{ Math.round(macrosForDate(date).carbs) }}<em>C</em></span
+                >
+                <span :class="macrosForDate(date).kcal ? ['m-fat', trafficLight(macrosForDate(date).fat, targetMacros?.fat_g, 0.85, 1.15)] : 'm-empty'"
+                    >{{ Math.round(macrosForDate(date).fat) }}<em>F</em></span
+                >
             </div>
         </div>
 
@@ -126,6 +147,7 @@ function macrosForDate(date: string) {
             :entry="dialogEntry"
             :date="dialogDate"
             :recipes="recipes"
+            :initialMealType="dialogInitialMealType"
             @save="handleSave"
             @remove="handleRemove"
         />
@@ -211,6 +233,26 @@ function macrosForDate(date: string) {
     .m-fat {
         color: #f9a825;
         background: #fff8e1;
+    }
+
+    .m-empty {
+        color: #9e9e9e;
+        background: #f5f5f5;
+    }
+
+    .tl-green {
+        color: #2e7d32;
+        background: #e8f5e9;
+    }
+
+    .tl-orange {
+        color: #e65100;
+        background: #fff3e0;
+    }
+
+    .tl-red {
+        color: #c62828;
+        background: #ffebee;
     }
 }
 </style>

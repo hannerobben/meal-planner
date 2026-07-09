@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { MealPlanEntryContract } from '../../model/meal-plan-entry.contract.ts';
+import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entry.contract.ts';
 import MealSlot from './MealSlot.vue';
 import dayjs from 'dayjs';
 
-const MIN_SLOTS = 4;
+const SLOT_ORDER: MealType[] = ['breakfast', 'snack', 'lunch', 'snack', 'dinner'];
 
 const props = defineProps<{
     date: string;
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     slotClick: [date: string, entry: MealPlanEntryContract];
-    addClick: [date: string];
+    addClick: [date: string, mealType: MealType];
 }>();
 
 const isPast = computed(() => dayjs(props.date).isBefore(dayjs(), 'day'));
@@ -23,7 +23,16 @@ const dayLabel = computed(() => {
     return { day: d.toLocaleDateString('en-GB', { weekday: 'short' }), date: d.getDate() };
 });
 
-const emptySlotCount = computed(() => Math.max(1, MIN_SLOTS - props.entries.length));
+const slots = computed(() => {
+    const snacks = props.entries.filter((e) => e.meal_type === 'snack');
+    let snackIndex = 0;
+    return SLOT_ORDER.map((mealType) => {
+        if (mealType === 'snack') {
+            return { mealType, entry: snacks[snackIndex++] ?? null };
+        }
+        return { mealType, entry: props.entries.find((e) => e.meal_type === mealType) ?? null };
+    });
+});
 </script>
 
 <template>
@@ -33,18 +42,16 @@ const emptySlotCount = computed(() => Math.max(1, MIN_SLOTS - props.entries.leng
             <div class="day-num">{{ dayLabel.date }}</div>
         </div>
         <div class="slots">
-            <MealSlot
-                v-for="entry in entries"
-                :key="entry.id"
-                :entry="entry"
-                @click="emit('slotClick', date, entry)"
-            />
-            <div
-                v-for="i in emptySlotCount"
-                :key="`empty-${i}`"
-                class="empty-slot"
-                @click="emit('addClick', date)"
-            >+</div>
+            <template v-for="(slot, i) in slots" :key="i">
+                <MealSlot
+                    v-if="slot.entry"
+                    :entry="slot.entry"
+                    @click="emit('slotClick', date, slot.entry!)"
+                />
+                <div v-else class="empty-slot" @click="emit('addClick', date, slot.mealType)">
+                    +
+                </div>
+            </template>
         </div>
     </div>
 </template>
@@ -84,7 +91,7 @@ const emptySlotCount = computed(() => Math.max(1, MIN_SLOTS - props.entries.leng
 }
 
 .empty-slot {
-    min-height: 44px;
+    min-height: 36px;
     border-radius: 6px;
     border: 1px dashed #ccc;
     cursor: pointer;

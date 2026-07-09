@@ -10,12 +10,15 @@ defineEmits<{ click: [] }>();
         class="meal-slot"
         :style="
             entry.recipe?.image_url
-                ? { backgroundImage: `url(${entry.recipe.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                ? {
+                      backgroundImage: `url(${entry.recipe.image_url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                  }
                 : {}
         "
         @click="$emit('click')"
-    >
-    </div>
+    ></div>
 </template>
 
 <style scoped>
@@ -25,6 +28,6 @@ defineEmits<{ click: [] }>();
     border: 1px solid #9bbd9d;
     background: #f1f8e9;
     cursor: pointer;
-    min-height: 44px;
+    min-height: 36px;
 }
 </style>

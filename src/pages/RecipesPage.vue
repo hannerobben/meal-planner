@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useRecipeStore } from '../stores/recipe.store.ts';
 import RecipeCard from '../components/recipe/RecipeCard.vue';
 import { MEAL_TYPES, type MealType } from '../model/meal-plan-entry.contract.ts';
+import { MEAL_TYPE_COLORS } from '../model/type-colors.ts';
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
@@ -13,11 +14,11 @@ const { recipes, loading } = storeToRefs(recipeStore);
 type SortKey = 'name' | 'calories' | 'protein' | 'carbs' | 'fat';
 
 const sortOptions: { label: string; value: SortKey }[] = [
-    { label: 'Name',     value: 'name' },
-    { label: 'kcal',     value: 'calories' },
-    { label: 'Protein',  value: 'protein' },
-    { label: 'Carbs',    value: 'carbs' },
-    { label: 'Fat',      value: 'fat' },
+    { label: 'Name', value: 'name' },
+    { label: 'kcal', value: 'calories' },
+    { label: 'Protein', value: 'protein' },
+    { label: 'Carbs', value: 'carbs' },
+    { label: 'Fat', value: 'fat' }
 ];
 
 const search = ref('');
@@ -25,15 +26,15 @@ const selectedType = ref<MealType | null>(null);
 const sortKey = ref<SortKey>('name');
 const sortAsc = ref(true);
 
-function recipeValue(r: typeof recipes.value[0], key: SortKey): string | number {
+function recipeValue(r: (typeof recipes.value)[0], key: SortKey): string | number {
     if (key === 'name') return r.name;
     const ings = r.ingredients ?? [];
     return ings.reduce((sum, ri) => {
         if (!ri.ingredient) return sum;
         const f = ri.quantity / 100;
         if (key === 'calories') return sum + ri.ingredient.calories_per_100 * f;
-        if (key === 'protein')  return sum + ri.ingredient.protein_g_per_100 * f;
-        if (key === 'carbs')    return sum + ri.ingredient.carbs_g_per_100 * f;
+        if (key === 'protein') return sum + ri.ingredient.protein_g_per_100 * f;
+        if (key === 'carbs') return sum + ri.ingredient.carbs_g_per_100 * f;
         return sum + ri.ingredient.fat_g_per_100 * f;
     }, 0);
 }
@@ -45,13 +46,15 @@ const filtered = computed(() =>
         .sort((a, b) => {
             const av = recipeValue(a, sortKey.value);
             const bv = recipeValue(b, sortKey.value);
-            const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number);
+            const cmp =
+                typeof av === 'string'
+                    ? av.localeCompare(bv as string)
+                    : (av as number) - (bv as number);
             return sortAsc.value ? cmp : -cmp;
         })
 );
 
 onMounted(() => recipeStore.fetchAll());
-
 </script>
 
 <template>
@@ -94,9 +97,11 @@ onMounted(() => recipeStore.fetchAll());
                 v-for="t in MEAL_TYPES"
                 :key="t"
                 class="type-chip"
-                :class="[t, { active: selectedType === t }]"
+                :class="{ active: selectedType === t }"
+                :style="{ backgroundColor: MEAL_TYPE_COLORS[t] }"
                 @click="selectedType = selectedType === t ? null : t"
-            >{{ t }}</span>
+                >{{ t }}</span
+            >
         </div>
 
         <div v-if="loading" class="loading">Loading…</div>
@@ -127,7 +132,9 @@ onMounted(() => recipeStore.fetchAll());
     justify-content: space-between;
     align-items: center;
 
-    h2 { margin: 0; }
+    h2 {
+        margin: 0;
+    }
 }
 
 .recipe-list {
@@ -142,14 +149,26 @@ onMounted(() => recipeStore.fetchAll());
     display: flex;
     justify-content: space-between;
     gap: 8px;
+    min-width: 0;
 
-    :deep(.p-iconfield) { flex: 1; }
+    :deep(.p-iconfield) {
+        flex: 1;
+        min-width: 0;
+    }
+    :deep(.p-iconfield .p-inputtext) {
+        width: 100%;
+        min-width: 0;
+    }
+    :deep(.p-inputtext) {
+        max-width: 180px;
+    }
 }
 
 .sort-controls {
     display: flex;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
 }
 
 .sort-dir-btn {
@@ -172,12 +191,9 @@ onMounted(() => recipeStore.fetchAll());
     border: 2px solid transparent;
     user-select: none;
 
-    &.breakfast { background-color: #ffd6a5; }
-    &.lunch     { background-color: #b5ead7; }
-    &.dinner    { background-color: #ffb3ba; }
-    &.snack     { background-color: #fffacd; }
-
-    &.active { border-color: #555; }
+    &.active {
+        border-color: #555;
+    }
 }
 
 .empty {

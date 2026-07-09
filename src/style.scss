@@ -80,10 +80,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 2px !important;
-
-    .label {
-        font-size: 0.6em;
-    }
+    min-height: 3rem;
 }
 
 .card {

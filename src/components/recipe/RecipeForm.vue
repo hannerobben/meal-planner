@@ -26,7 +26,10 @@ const name = ref(props.recipe?.name ?? '');
 const type = ref<MealType>(props.recipe?.type ?? 'dinner');
 const notes = ref(props.recipe?.notes ?? '');
 
-const typeOptions = MEAL_TYPES.map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), value: t }));
+const typeOptions = MEAL_TYPES.map((t) => ({
+    label: t.charAt(0).toUpperCase() + t.slice(1),
+    value: t
+}));
 
 const recipeId = ref<string | null>(props.recipe?.id ?? null);
 const currentImageUrl = ref<string | null>(props.recipe?.image_url ?? null);
@@ -95,7 +98,12 @@ async function onIngredientSelect(event: { value: IngredientSuggestion }) {
         return;
     }
     const ing = event.value as IngredientContract;
-    ingredients.value.push({ _key: String(++_keyCounter), ingredient_id: ing.id, ingredient: ing, quantity: 0 });
+    ingredients.value.push({
+        _key: String(++_keyCounter),
+        ingredient_id: ing.id,
+        ingredient: ing,
+        quantity: 0
+    });
     await saveIngredients();
 }
 
@@ -128,7 +136,12 @@ async function saveNew() {
     if (!newDraft.value.name.trim()) return;
     try {
         const created = await ingredientStore.create(newDraft.value);
-        ingredients.value.push({ _key: String(++_keyCounter), ingredient_id: created.id, ingredient: created, quantity: 0 });
+        ingredients.value.push({
+            _key: String(++_keyCounter),
+            ingredient_id: created.id,
+            ingredient: created,
+            quantity: 0
+        });
         showCreateDialog.value = false;
         await saveIngredients();
     } catch (e) {
@@ -140,7 +153,12 @@ async function ensureRecipeExists(): Promise<string | null> {
     if (recipeId.value) return recipeId.value;
     if (!name.value.trim()) return null;
     if (_pendingCreate) return _pendingCreate;
-    _pendingCreate = RecipeApi.create(authStore.householdId!, name.value.trim(), type.value, notes.value || null)
+    _pendingCreate = RecipeApi.create(
+        authStore.householdId!,
+        name.value.trim(),
+        type.value,
+        notes.value || null
+    )
         .then((created) => {
             recipeId.value = created.id;
             return created.id;
@@ -168,7 +186,13 @@ async function saveRecipe() {
             currentImageUrl.value = await RecipeApi.uploadImage(id, pendingImageFile.value);
             pendingImageFile.value = null;
         }
-        await RecipeApi.update(id, name.value.trim(), type.value, notes.value || null, currentImageUrl.value);
+        await RecipeApi.update(
+            id,
+            name.value.trim(),
+            type.value,
+            notes.value || null,
+            currentImageUrl.value
+        );
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
     }
@@ -202,7 +226,6 @@ const totals = computed(() => {
         { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
     );
 });
-
 </script>
 
 <template>
@@ -220,7 +243,13 @@ const totals = computed(() => {
                 <i class="pi pi-times" />
             </button>
         </div>
-        <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+        <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="onFileChange"
+        />
 
         <div class="field">
             <label>Name *</label>
@@ -229,12 +258,25 @@ const totals = computed(() => {
 
         <div class="field">
             <label>Type *</label>
-            <SelectButton v-model="type" :options="typeOptions" optionLabel="label" optionValue="value" :allowEmpty="false" @change="saveRecipe" />
+            <SelectButton
+                v-model="type"
+                :options="typeOptions"
+                optionLabel="label"
+                optionValue="value"
+                :allowEmpty="false"
+                @change="saveRecipe"
+            />
         </div>
 
         <div class="field">
             <label>Notes</label>
-            <Textarea v-model="notes" placeholder="Instructions, tips…" rows="3" autoResize @blur="saveRecipe" />
+            <Textarea
+                v-model="notes"
+                placeholder="Instructions, tips…"
+                rows="3"
+                autoResize
+                @blur="saveRecipe"
+            />
         </div>
 
         <div class="ingredients-section">
@@ -276,7 +318,12 @@ const totals = computed(() => {
             </div>
         </div>
 
-        <Dialog v-model:visible="showCreateDialog" header="New Ingredient" modal style="width: 360px">
+        <Dialog
+            v-model:visible="showCreateDialog"
+            header="New Ingredient"
+            modal
+            style="width: 360px"
+        >
             <div class="new-form">
                 <div class="field">
                     <label>Name *</label>
@@ -315,11 +362,15 @@ const totals = computed(() => {
                 </div>
             </div>
             <template #footer>
-                <Button label="Cancel" text severity="secondary" @click="showCreateDialog = false" />
+                <Button
+                    label="Cancel"
+                    text
+                    severity="secondary"
+                    @click="showCreateDialog = false"
+                />
                 <Button label="Save" @click="saveNew" :disabled="!newDraft.name.trim()" />
             </template>
         </Dialog>
-
     </div>
 </template>
 
@@ -329,6 +380,7 @@ const totals = computed(() => {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    background-color: whitesmoke;
 }
 
 .image-upload {
@@ -344,7 +396,9 @@ const totals = computed(() => {
     position: relative;
     overflow: hidden;
 
-    &:hover { border-color: #aaa; }
+    &:hover {
+        border-color: #aaa;
+    }
 }
 
 .image-placeholder {
@@ -355,7 +409,9 @@ const totals = computed(() => {
     color: #aaa;
     pointer-events: none;
 
-    i { font-size: 2rem; }
+    i {
+        font-size: 2rem;
+    }
 }
 
 .remove-image {
@@ -373,7 +429,9 @@ const totals = computed(() => {
     align-items: center;
     justify-content: center;
 
-    &:hover { background: rgba(0, 0, 0, 0.75); }
+    &:hover {
+        background: rgba(0, 0, 0, 0.75);
+    }
 }
 
 .field {
@@ -381,7 +439,10 @@ const totals = computed(() => {
     flex-direction: column;
     gap: 6px;
 
-    label { font-size: 0.85em; color: #555; }
+    label {
+        font-size: 0.85em;
+        color: #555;
+    }
 }
 
 .ingredients-title {
@@ -427,17 +488,17 @@ const totals = computed(() => {
     border-radius: 8px;
     background: white;
     display: flex;
-  justify-content: space-between;
+    justify-content: space-between;
     align-items: center;
-  gap: 4px;
+    gap: 4px;
 
-  .macro {
-    background-color: #adebe0;
-    color: #006351;
-    padding: 2px 6px;
-    border-radius: 4px;
-    flex: 1;
-    text-align: center;
-  }
+    .macro {
+        background-color: #adebe0;
+        color: #006351;
+        padding: 2px 6px;
+        border-radius: 4px;
+        flex: 1;
+        text-align: center;
+    }
 }
 </style>
