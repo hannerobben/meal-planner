@@ -8,7 +8,13 @@ import { useAuthStore } from '../stores/auth.store.ts';
 import WeekGrid from '../components/plan/WeekGrid.vue';
 import MealSlotDialog from '../components/plan/MealSlotDialog.vue';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
-import { calculateBMR, calculateTDEE, calculateMacros, ActivityLevel, FatLossGoal } from '../utils/nutrition.ts';
+import {
+    calculateBMR,
+    calculateTDEE,
+    calculateMacros,
+    ActivityLevel,
+    FatLossGoal
+} from '../utils/nutrition.ts';
 import dayjs from 'dayjs';
 
 const planStore = usePlanStore();
@@ -21,9 +27,22 @@ const { appUser } = storeToRefs(useAuthStore());
 const targetMacros = computed(() => {
     const u = appUser.value;
     if (!u?.weight_kg || !u?.height_cm || !u?.age || !u?.sex || !u?.activity_level) return null;
-    const bmr = calculateBMR({ weight_kg: u.weight_kg, height_cm: u.height_cm, age: u.age, sex: u.sex });
+    const bmr = calculateBMR({
+        weight_kg: u.weight_kg,
+        height_cm: u.height_cm,
+        age: u.age,
+        sex: u.sex
+    });
     const tdee = calculateTDEE(bmr, u.activity_level as ActivityLevel);
-    return { tdee, ...calculateMacros({ tdee, weight_kg: u.weight_kg, protein_per_kg: u.protein_per_kg ?? undefined, fat_loss_goal: (u.fat_loss_goal as FatLossGoal) ?? undefined }) };
+    return {
+        tdee,
+        ...calculateMacros({
+            tdee,
+            weight_kg: u.weight_kg,
+            protein_per_kg: u.protein_per_kg ?? undefined,
+            fat_loss_goal: (u.fat_loss_goal as FatLossGoal) ?? undefined
+        })
+    };
 });
 
 function trafficLight(actual: number, target: number | undefined, lo: number, hi: number): string {
@@ -32,6 +51,11 @@ function trafficLight(actual: number, target: number | undefined, lo: number, hi
     if (ratio >= lo && ratio <= hi) return 'tl-green';
     if (ratio >= 2 * lo - 1 && ratio <= 2 * hi - 1) return 'tl-orange';
     return 'tl-red';
+}
+
+function caret(actual: number, target: number | undefined): string {
+    if (!target || !actual) return '';
+    return actual > target ? '▲' : '▼';
 }
 
 const dialogVisible = ref(false);
@@ -56,7 +80,11 @@ function openEntry(date: string, entry: MealPlanEntryContract) {
     dialogVisible.value = true;
 }
 
-async function handleSave(mealType: MealType | null, recipeId: string | null, freeText: string | null) {
+async function handleSave(
+    mealType: MealType | null,
+    recipeId: string | null,
+    freeText: string | null
+) {
     try {
         if (mealType) {
             await planStore.insertEntry(dialogDate.value, mealType, recipeId, freeText);
@@ -127,17 +155,81 @@ function macrosForDate(date: string) {
         />
         <div v-if="!loading" class="macro-row">
             <div v-for="date in getDates()" :key="date" class="macro-cell">
-                <span :class="macrosForDate(date).kcal ? ['m-kcal', trafficLight(macrosForDate(date).kcal, targetMacros?.target_kcal, 0.95, 1.05)] : 'm-empty'"
-                    >{{ Math.round(macrosForDate(date).kcal) }}<em>kcal</em></span
+                <span
+                    :class="
+                        macrosForDate(date).kcal
+                            ? [
+                                  'm-kcal',
+                                  trafficLight(
+                                      macrosForDate(date).kcal,
+                                      targetMacros?.target_kcal,
+                                      0.95,
+                                      1.05
+                                  )
+                              ]
+                            : 'm-empty'
+                    "
+                    >{{ Math.round(macrosForDate(date).kcal) }}<em>kcal</em
+                    ><em class="caret">{{
+                        caret(macrosForDate(date).kcal, targetMacros?.target_kcal)
+                    }}</em></span
                 >
-                <span :class="macrosForDate(date).kcal ? ['m-protein', trafficLight(macrosForDate(date).protein, targetMacros?.protein_g, 0.90, 1.20)] : 'm-empty'"
-                    >{{ Math.round(macrosForDate(date).protein) }}<em>P</em></span
+                <span
+                    :class="
+                        macrosForDate(date).kcal
+                            ? [
+                                  'm-protein',
+                                  trafficLight(
+                                      macrosForDate(date).protein,
+                                      targetMacros?.protein_g,
+                                      0.9,
+                                      1.2
+                                  )
+                              ]
+                            : 'm-empty'
+                    "
+                    >{{ Math.round(macrosForDate(date).protein) }}<em>P</em
+                    ><em class="caret">{{
+                        caret(macrosForDate(date).protein, targetMacros?.protein_g)
+                    }}</em></span
                 >
-                <span :class="macrosForDate(date).kcal ? ['m-carbs', trafficLight(macrosForDate(date).carbs, targetMacros?.carbs_g, 0.85, 1.15)] : 'm-empty'"
-                    >{{ Math.round(macrosForDate(date).carbs) }}<em>C</em></span
+                <span
+                    :class="
+                        macrosForDate(date).kcal
+                            ? [
+                                  'm-carbs',
+                                  trafficLight(
+                                      macrosForDate(date).carbs,
+                                      targetMacros?.carbs_g,
+                                      0.85,
+                                      1.15
+                                  )
+                              ]
+                            : 'm-empty'
+                    "
+                    >{{ Math.round(macrosForDate(date).carbs) }}<em>C</em
+                    ><em class="caret">{{
+                        caret(macrosForDate(date).carbs, targetMacros?.carbs_g)
+                    }}</em></span
                 >
-                <span :class="macrosForDate(date).kcal ? ['m-fat', trafficLight(macrosForDate(date).fat, targetMacros?.fat_g, 0.85, 1.15)] : 'm-empty'"
-                    >{{ Math.round(macrosForDate(date).fat) }}<em>F</em></span
+                <span
+                    :class="
+                        macrosForDate(date).kcal
+                            ? [
+                                  'm-fat',
+                                  trafficLight(
+                                      macrosForDate(date).fat,
+                                      targetMacros?.fat_g,
+                                      0.85,
+                                      1.15
+                                  )
+                              ]
+                            : 'm-empty'
+                    "
+                    >{{ Math.round(macrosForDate(date).fat) }}<em>F</em
+                    ><em class="caret">{{
+                        caret(macrosForDate(date).fat, targetMacros?.fat_g)
+                    }}</em></span
                 >
             </div>
         </div>
@@ -202,7 +294,7 @@ function macrosForDate(date: string) {
         flex-direction: column;
         align-items: center;
         line-height: 1.1;
-        font-size: 0.72em;
+        font-size: 0.52em;
         font-weight: 600;
         width: 100%;
         flex: 1;
@@ -215,6 +307,13 @@ function macrosForDate(date: string) {
             font-weight: 400;
             font-size: 0.8em;
             opacity: 0.7;
+        }
+
+        em.caret {
+            font-size: 0.65em;
+            line-height: 1;
+            opacity: 0.85;
+            margin-top: 2px;
         }
     }
 
