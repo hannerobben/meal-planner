@@ -322,12 +322,12 @@ const totals = computed(() => {
             v-model:visible="showCreateDialog"
             header="New Ingredient"
             modal
-            style="width: 360px"
+            style="width: min(360px, 96vw)"
         >
             <div class="new-form">
                 <div class="field">
                     <label>Name *</label>
-                    <InputText v-model="newDraft.name" />
+                    <InputText v-model="newDraft.name" fluid />
                 </div>
                 <div class="field">
                     <label>Category</label>
@@ -336,28 +336,29 @@ const totals = computed(() => {
                         :options="categoryOptions"
                         optionLabel="label"
                         optionValue="value"
+                        fluid
                     />
                 </div>
                 <div class="field">
                     <label>Base unit</label>
-                    <InputText v-model="newDraft.base_unit" placeholder="g" />
+                    <InputText v-model="newDraft.base_unit" placeholder="g" fluid />
                 </div>
                 <div class="macro-row">
                     <div class="field">
                         <label>kcal / 100</label>
-                        <InputNumber v-model="newDraft.calories_per_100" :min="0" />
+                        <InputNumber v-model="newDraft.calories_per_100" :min="0" fluid />
                     </div>
                     <div class="field">
                         <label>Protein / 100</label>
-                        <InputNumber v-model="newDraft.protein_g_per_100" :min="0" />
+                        <InputNumber v-model="newDraft.protein_g_per_100" :min="0" fluid />
                     </div>
                     <div class="field">
                         <label>Carbs / 100</label>
-                        <InputNumber v-model="newDraft.carbs_g_per_100" :min="0" />
+                        <InputNumber v-model="newDraft.carbs_g_per_100" :min="0" fluid />
                     </div>
                     <div class="field">
                         <label>Fat / 100</label>
-                        <InputNumber v-model="newDraft.fat_g_per_100" :min="0" />
+                        <InputNumber v-model="newDraft.fat_g_per_100" :min="0" fluid />
                     </div>
                 </div>
             </div>
@@ -468,6 +469,10 @@ const totals = computed(() => {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+
+    .field {
+        min-width: 0;
+    }
 }
 
 .ingredient-labels {

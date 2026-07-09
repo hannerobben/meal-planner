@@ -31,7 +31,9 @@ watch(
 );
 
 const recipeOptions = computed(() =>
-    props.recipes.map((r) => ({ label: r.name, value: r.id }))
+    props.recipes
+        .filter((r) => r.type === displayMealType.value)
+        .map((r) => ({ label: r.name, value: r.id }))
 );
 
 const canSave = computed(() => !!selectedRecipeId.value);

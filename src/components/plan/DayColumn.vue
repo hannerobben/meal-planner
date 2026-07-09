@@ -4,7 +4,7 @@ import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entr
 import MealSlot from './MealSlot.vue';
 import dayjs from 'dayjs';
 
-const SLOT_ORDER: MealType[] = ['breakfast', 'snack', 'lunch', 'snack', 'dinner'];
+const SLOT_ORDER: MealType[] = ['breakfast', 'snack', 'lunch', 'snack', 'dinner', 'snack'];
 
 const props = defineProps<{
     date: string;
