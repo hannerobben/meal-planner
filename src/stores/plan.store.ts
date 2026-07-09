@@ -47,9 +47,8 @@ export const usePlanStore = defineStore('plan-store', {
             this.entries.push(entry);
         },
         async updateEntry(id: string, recipeId: string | null, freeText: string | null) {
-            const entry = await PlanApi.update(id, recipeId, freeText);
-            const idx = this.entries.findIndex((e) => e.id === id);
-            if (idx >= 0) this.entries[idx] = entry;
+            await PlanApi.update(id, recipeId, freeText);
+            await this.fetchWeek();
         },
         async removeEntry(id: string) {
             await PlanApi.remove(id);
