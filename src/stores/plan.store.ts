@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
 import { PlanApi } from '../supabase/plan.api.ts';
 import { useAuthStore } from './auth.store.ts';
+import { currentWeekStart } from '../utils/week.ts';
 import dayjs from 'dayjs';
 
 function toIso(d: dayjs.Dayjs) {
@@ -15,7 +16,7 @@ export const usePlanStore = defineStore('plan-store', {
         loading: boolean;
     } => ({
         entries: [],
-        weekStart: toIso(dayjs().startOf('week').add(1, 'day')),
+        weekStart: currentWeekStart(useAuthStore().firstWeekDay),
         loading: false,
     }),
     getters: {
@@ -40,10 +41,10 @@ export const usePlanStore = defineStore('plan-store', {
             this.weekStart = toIso(dayjs(this.weekStart).add(7, 'day'));
             this.fetchWeek();
         },
-        async insertEntry(date: string, mealType: MealType, recipeId: string | null, freeText: string | null) {
+        async insertEntry(date: string, mealType: MealType, slotIndex: number, recipeId: string | null, freeText: string | null) {
             const householdId = useAuthStore().householdId;
             if (!householdId) return;
-            const entry = await PlanApi.insert(householdId, date, mealType, recipeId, freeText);
+            const entry = await PlanApi.insert(householdId, date, mealType, slotIndex, recipeId, freeText);
             this.entries.push(entry);
         },
         async updateEntry(id: string, recipeId: string | null, freeText: string | null) {

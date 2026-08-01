@@ -28,6 +28,49 @@ export const primevuePreset = definePreset(Aura, {
             900: '#1C1C1C'
         }
     },
+    components: {
+        togglebutton: {
+            colorScheme: {
+                light: {
+                    content: {
+                        checkedBackground: '#a8d5a2',
+                        checkedHoverBackground: '#90c98a',
+                        checkedColor: '#1a5c2a',
+                    }
+                }
+            }
+        },
+        button: {
+            colorScheme: {
+                light: {
+                    root: {
+                        primary: {
+                            background: '#a8d5a2',
+                            hoverBackground: '#90c98a',
+                            activeBackground: '#78bc72',
+                            borderColor: '#a8d5a2',
+                            hoverBorderColor: '#90c98a',
+                            activeBorderColor: '#78bc72',
+                            color: '#1a5c2a',
+                            hoverColor: '#1a5c2a',
+                            activeColor: '#1a5c2a',
+                        },
+                        secondary: {
+                            background: '#dbe8f5',
+                            hoverBackground: '#c8d9ef',
+                            activeBackground: '#b5cae9',
+                            borderColor: '#dbe8f5',
+                            hoverBorderColor: '#c8d9ef',
+                            activeBorderColor: '#b5cae9',
+                            color: '#1e3a5f',
+                            hoverColor: '#1e3a5f',
+                            activeColor: '#1e3a5f',
+                        }
+                    }
+                }
+            }
+        }
+    },
     semantic: {
         colorScheme: {
             light: {

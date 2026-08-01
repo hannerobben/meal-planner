@@ -24,12 +24,13 @@ export class PlanApi {
         householdId: string,
         date: string,
         mealType: MealType,
+        slotIndex: number,
         recipeId: string | null,
         freeText: string | null
     ): Promise<MealPlanEntryContract> {
         const { data, error } = await supabase
             .from('meal_plan_entries')
-            .insert({ household_id: householdId, date, meal_type: mealType, recipe_id: recipeId, free_text: freeText })
+            .insert({ household_id: householdId, date, meal_type: mealType, slot_index: slotIndex, recipe_id: recipeId, free_text: freeText })
             .select(SELECT)
             .single();
         if (error) throw error;

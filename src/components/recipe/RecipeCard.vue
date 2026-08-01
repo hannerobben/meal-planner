@@ -2,25 +2,12 @@
 import type { RecipeContract } from '../../model/recipe.contract.ts';
 import { computed } from 'vue';
 import { MEAL_TYPE_COLORS } from '../../model/type-colors.ts';
+import { sumMacros } from '../../utils/recipe-macros.ts';
 
 const props = defineProps<{ recipe: RecipeContract }>();
 const emit = defineEmits<{ select: [] }>();
 
-const totals = computed(() =>
-    (props.recipe.ingredients ?? []).reduce(
-        (acc, ri) => {
-            if (!ri.ingredient) return acc;
-            const f = ri.quantity / 100;
-            return {
-                calories: acc.calories + ri.ingredient.calories_per_100 * f,
-                protein_g: acc.protein_g + ri.ingredient.protein_g_per_100 * f,
-                carbs_g: acc.carbs_g + ri.ingredient.carbs_g_per_100 * f,
-                fat_g: acc.fat_g + ri.ingredient.fat_g_per_100 * f
-            };
-        },
-        { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
-    )
-);
+const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
 </script>
 
 <template>
@@ -32,7 +19,14 @@ const totals = computed(() =>
     >
         <div class="top">
             <span class="recipe-name">{{ recipe.name }}</span>
-            <span class="type-badge" :style="{ backgroundColor: MEAL_TYPE_COLORS[recipe.type] }">{{ recipe.type }}</span>
+            <div class="badges">
+                <span
+                    v-for="t in recipe.type"
+                    :key="t"
+                    class="type-badge"
+                    :style="{ backgroundColor: MEAL_TYPE_COLORS[t] }"
+                >{{ t }}</span>
+            </div>
         </div>
         <div class="display-row">
             <div class="meta">
@@ -103,8 +97,16 @@ const totals = computed(() =>
 .top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 6px;
     margin-bottom: 4px;
+}
+
+.badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .display-row {

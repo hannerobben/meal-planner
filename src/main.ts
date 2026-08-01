@@ -19,9 +19,7 @@ import { primevuePlugin } from './primevue/primevue.ts';
     app.use(primevuePlugin);
 
     const authStore = useAuthStore();
-    await authStore.getAuthUser().then(async () => {
-        await authStore.getAppUser();
-    });
+    await authStore.getAuthUserAndAppUser();
 
     app.mount('#app');
 

@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useIngredientStore } from '../stores/ingredient.store.ts';
-import { INGREDIENT_CATEGORIES, type IngredientCategory } from '../model/ingredient.contract.ts';
+import { INGREDIENT_CATEGORIES, INGREDIENT_UNITS, type IngredientCategory, type IngredientUnit } from '../model/ingredient.contract.ts';
 import { INGREDIENT_CATEGORY_COLORS } from '../model/type-colors.ts';
 import type { IngredientContract } from '../model/ingredient.contract.ts';
 import type { IngredientInput } from '../supabase/ingredient.api.ts';
@@ -12,6 +12,7 @@ const toast = useToast();
 const store = useIngredientStore();
 
 const categoryOptions = INGREDIENT_CATEGORIES.map((c) => ({ label: c, value: c }));
+const unitOptions = INGREDIENT_UNITS.map((u) => ({ label: u, value: u }));
 
 // ── Sort ─────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ const editDraft = ref<IngredientInput>({
     name: '',
     category: 'other' as IngredientCategory,
     base_unit: 'g',
+    grams_per_item: null,
     calories_per_100: 0,
     protein_g_per_100: 0,
     carbs_g_per_100: 0,
@@ -74,6 +76,7 @@ function startEdit(ingredient: IngredientContract) {
         name: ingredient.name,
         category: ingredient.category,
         base_unit: ingredient.base_unit,
+        grams_per_item: ingredient.grams_per_item,
         calories_per_100: ingredient.calories_per_100,
         protein_g_per_100: ingredient.protein_g_per_100,
         carbs_g_per_100: ingredient.carbs_g_per_100,
@@ -99,6 +102,7 @@ const newDraft = ref<IngredientInput>({
     name: '',
     category: 'other' as IngredientCategory,
     base_unit: 'g',
+    grams_per_item: null,
     calories_per_100: 0,
     protein_g_per_100: 0,
     carbs_g_per_100: 0,
@@ -110,12 +114,18 @@ function openNewDialog() {
         name: '',
         category: 'other' as IngredientCategory,
         base_unit: 'g',
+        grams_per_item: null,
         calories_per_100: 0,
         protein_g_per_100: 0,
         carbs_g_per_100: 0,
         fat_g_per_100: 0
     };
     showNewDialog.value = true;
+}
+
+function onUnitChange(draft: IngredientInput, unit: IngredientUnit) {
+    draft.base_unit = unit;
+    if (unit !== 'item') draft.grams_per_item = null;
 }
 
 async function saveNew() {
@@ -208,8 +218,18 @@ async function saveNew() {
                     />
                 </div>
                 <div class="field">
-                    <label>Base unit</label>
-                    <InputText v-model="editDraft.base_unit" placeholder="g" />
+                    <label>Unit</label>
+                    <Select
+                        :modelValue="editDraft.base_unit"
+                        @update:modelValue="onUnitChange(editDraft, $event)"
+                        :options="unitOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                    />
+                </div>
+                <div v-if="editDraft.base_unit === 'item'" class="field">
+                    <label>Grams per item</label>
+                    <InputNumber v-model="editDraft.grams_per_item" :min="0" placeholder="e.g. 60" />
                 </div>
                 <div class="macro-row">
                     <div class="field">
@@ -258,8 +278,18 @@ async function saveNew() {
                     />
                 </div>
                 <div class="field">
-                    <label>Base unit</label>
-                    <InputText v-model="newDraft.base_unit" placeholder="g" />
+                    <label>Unit</label>
+                    <Select
+                        :modelValue="newDraft.base_unit"
+                        @update:modelValue="onUnitChange(newDraft, $event)"
+                        :options="unitOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                    />
+                </div>
+                <div v-if="newDraft.base_unit === 'item'" class="field">
+                    <label>Grams per item</label>
+                    <InputNumber v-model="newDraft.grams_per_item" :min="0" placeholder="e.g. 60" />
                 </div>
                 <div class="macro-row">
                     <div class="field">

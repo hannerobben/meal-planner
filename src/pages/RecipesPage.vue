@@ -6,6 +6,7 @@ import { useRecipeStore } from '../stores/recipe.store.ts';
 import RecipeCard from '../components/recipe/RecipeCard.vue';
 import { MEAL_TYPES, type MealType } from '../model/meal-plan-entry.contract.ts';
 import { MEAL_TYPE_COLORS } from '../model/type-colors.ts';
+import { ingredientFactor } from '../utils/recipe-macros.ts';
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
@@ -31,7 +32,7 @@ function recipeValue(r: (typeof recipes.value)[0], key: SortKey): string | numbe
     const ings = r.ingredients ?? [];
     return ings.reduce((sum, ri) => {
         if (!ri.ingredient) return sum;
-        const f = ri.quantity / 100;
+        const f = ingredientFactor(ri.quantity, ri.ingredient);
         if (key === 'calories') return sum + ri.ingredient.calories_per_100 * f;
         if (key === 'protein') return sum + ri.ingredient.protein_g_per_100 * f;
         if (key === 'carbs') return sum + ri.ingredient.carbs_g_per_100 * f;
@@ -42,7 +43,7 @@ function recipeValue(r: (typeof recipes.value)[0], key: SortKey): string | numbe
 const filtered = computed(() =>
     recipes.value
         .filter((r) => r.name.toLowerCase().includes(search.value.toLowerCase()))
-        .filter((r) => !selectedType.value || r.type === selectedType.value)
+        .filter((r) => !selectedType.value || r.type.includes(selectedType.value))
         .sort((a, b) => {
             const av = recipeValue(a, sortKey.value);
             const bv = recipeValue(b, sortKey.value);

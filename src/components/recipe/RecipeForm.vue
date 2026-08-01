@@ -5,8 +5,9 @@ import { useAuthStore } from '../../stores/auth.store.ts';
 import { useIngredientStore } from '../../stores/ingredient.store.ts';
 import { RecipeApi } from '../../supabase/recipe.api.ts';
 import type { RecipeContract } from '../../model/recipe.contract.ts';
-import type { IngredientContract, IngredientCategory } from '../../model/ingredient.contract.ts';
-import { INGREDIENT_CATEGORIES } from '../../model/ingredient.contract.ts';
+import type { IngredientContract, IngredientCategory, IngredientUnit } from '../../model/ingredient.contract.ts';
+import { INGREDIENT_CATEGORIES, INGREDIENT_UNITS } from '../../model/ingredient.contract.ts';
+import { sumMacros } from '../../utils/recipe-macros.ts';
 import type { IngredientInput } from '../../supabase/ingredient.api.ts';
 import RecipeIngredientRow from './RecipeIngredientRow.vue';
 import type { RecipeIngredientRowData } from './RecipeIngredientRow.vue';
@@ -23,7 +24,7 @@ onMounted(() => {
 });
 
 const name = ref(props.recipe?.name ?? '');
-const type = ref<MealType>(props.recipe?.type ?? 'dinner');
+const type = ref<MealType[]>(props.recipe?.type ?? ['dinner']);
 const notes = ref(props.recipe?.notes ?? '');
 
 const typeOptions = MEAL_TYPES.map((t) => ({
@@ -109,21 +110,29 @@ async function onIngredientSelect(event: { value: IngredientSuggestion }) {
 
 const showCreateDialog = ref(false);
 const categoryOptions = INGREDIENT_CATEGORIES.map((c) => ({ label: c, value: c }));
+const unitOptions = INGREDIENT_UNITS.map((u) => ({ label: u, value: u }));
 const newDraft = ref<IngredientInput>({
     name: '',
     category: 'other' as IngredientCategory,
     base_unit: 'g',
+    grams_per_item: null,
     calories_per_100: 0,
     protein_g_per_100: 0,
     carbs_g_per_100: 0,
     fat_g_per_100: 0
 });
 
+function onUnitChange(unit: IngredientUnit) {
+    newDraft.value.base_unit = unit;
+    if (unit !== 'item') newDraft.value.grams_per_item = null;
+}
+
 function openCreateDialog(prefill: string) {
     newDraft.value = {
         name: prefill,
         category: 'other' as IngredientCategory,
         base_unit: 'g',
+        grams_per_item: null,
         calories_per_100: 0,
         protein_g_per_100: 0,
         carbs_g_per_100: 0,
@@ -212,19 +221,7 @@ async function saveIngredients() {
 }
 
 const totals = computed(() => {
-    return ingredients.value.reduce(
-        (acc, ri) => {
-            if (!ri.ingredient || !ri.quantity) return acc;
-            const f = ri.quantity / 100;
-            return {
-                calories: acc.calories + ri.ingredient.calories_per_100 * f,
-                protein_g: acc.protein_g + ri.ingredient.protein_g_per_100 * f,
-                carbs_g: acc.carbs_g + ri.ingredient.carbs_g_per_100 * f,
-                fat_g: acc.fat_g + ri.ingredient.fat_g_per_100 * f
-            };
-        },
-        { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
-    );
+    return sumMacros(ingredients.value);
 });
 </script>
 
@@ -263,6 +260,7 @@ const totals = computed(() => {
                 :options="typeOptions"
                 optionLabel="label"
                 optionValue="value"
+                multiple
                 :allowEmpty="false"
                 @change="saveRecipe"
             />
@@ -340,8 +338,19 @@ const totals = computed(() => {
                     />
                 </div>
                 <div class="field">
-                    <label>Base unit</label>
-                    <InputText v-model="newDraft.base_unit" placeholder="g" fluid />
+                    <label>Unit</label>
+                    <Select
+                        :modelValue="newDraft.base_unit"
+                        @update:modelValue="onUnitChange($event)"
+                        :options="unitOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        fluid
+                    />
+                </div>
+                <div v-if="newDraft.base_unit === 'item'" class="field">
+                    <label>Grams per item</label>
+                    <InputNumber v-model="newDraft.grams_per_item" :min="0" placeholder="e.g. 60" fluid />
                 </div>
                 <div class="macro-row">
                     <div class="field">

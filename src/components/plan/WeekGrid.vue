@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     slotClick: [date: string, entry: MealPlanEntryContract];
-    addClick: [date: string, mealType: MealType];
+    addClick: [date: string, mealType: MealType, slotIndex: number];
 }>();
 
 function getDates(): string[] {
@@ -32,7 +32,7 @@ function entriesForDate(date: string) {
             :date="date"
             :entries="entriesForDate(date)"
             @slotClick="(date, entry) => emit('slotClick', date, entry)"
-            @addClick="(date, mealType) => emit('addClick', date, mealType)"
+            @addClick="(date, mealType, slotIndex) => emit('addClick', date, mealType, slotIndex)"
         />
     </div>
 </template>

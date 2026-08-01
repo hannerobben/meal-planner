@@ -15,6 +15,7 @@ import {
     ActivityLevel,
     FatLossGoal
 } from '../utils/nutrition.ts';
+import { ingredientFactor } from '../utils/recipe-macros.ts';
 import dayjs from 'dayjs';
 
 const planStore = usePlanStore();
@@ -62,15 +63,17 @@ const dialogVisible = ref(false);
 const dialogDate = ref('');
 const dialogEntry = ref<MealPlanEntryContract | undefined>(undefined);
 const dialogInitialMealType = ref<MealType>('breakfast');
+const dialogSlotIndex = ref(0);
 
 onMounted(async () => {
     await Promise.all([planStore.fetchWeek(), recipeStore.fetchAll()]);
 });
 
-function openNew(date: string, mealType: MealType) {
+function openNew(date: string, mealType: MealType, slotIndex: number) {
     dialogDate.value = date;
     dialogEntry.value = undefined;
     dialogInitialMealType.value = mealType;
+    dialogSlotIndex.value = slotIndex;
     dialogVisible.value = true;
 }
 
@@ -87,7 +90,7 @@ async function handleSave(
 ) {
     try {
         if (mealType) {
-            await planStore.insertEntry(dialogDate.value, mealType, recipeId, freeText);
+            await planStore.insertEntry(dialogDate.value, mealType, dialogSlotIndex.value, recipeId, freeText);
         } else if (dialogEntry.value) {
             await planStore.updateEntry(dialogEntry.value.id, recipeId, freeText);
         }
@@ -124,7 +127,7 @@ function macrosForDate(date: string) {
             const ings = e.recipe?.ingredients ?? [];
             for (const ri of ings) {
                 if (!ri.ingredient) continue;
-                const f = ri.quantity / 100;
+                const f = ingredientFactor(ri.quantity, ri.ingredient);
                 acc.kcal += f * ri.ingredient.calories_per_100;
                 acc.protein += f * ri.ingredient.protein_g_per_100;
                 acc.carbs += f * ri.ingredient.carbs_g_per_100;
@@ -151,7 +154,7 @@ function macrosForDate(date: string) {
             :weekStart="weekStart"
             :entries="entries"
             @slotClick="(date, entry) => openEntry(date, entry)"
-            @addClick="(date, mealType) => openNew(date, mealType)"
+            @addClick="(date, mealType, slotIndex) => openNew(date, mealType, slotIndex)"
         />
         <div v-if="!loading" class="macro-row">
             <div v-for="date in getDates()" :key="date" class="macro-cell">

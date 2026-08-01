@@ -9,6 +9,7 @@ export interface MealPlanEntryContract {
     household_id: string;
     date: string;
     meal_type: MealType;
+    slot_index: number;
     recipe_id: string | null;
     free_text: string | null;
     recipe?: RecipeContract;

@@ -5,7 +5,7 @@ export interface RecipeContract {
     id: string;
     household_id: string;
     name: string;
-    type: MealType;
+    type: MealType[];
     notes: string | null;
     image_url: string | null;
     created_at: string;

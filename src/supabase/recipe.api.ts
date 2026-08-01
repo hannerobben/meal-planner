@@ -28,7 +28,7 @@ export class RecipeApi {
     public static async create(
         householdId: string,
         name: string,
-        type: MealType,
+        type: MealType[],
         notes: string | null
     ): Promise<RecipeContract> {
         const { data, error } = await supabase
@@ -44,7 +44,7 @@ export class RecipeApi {
     public static async update(
         id: string,
         name: string,
-        type: MealType,
+        type: MealType[],
         notes: string | null,
         image_url: string | null
     ): Promise<void> {

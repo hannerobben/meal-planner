@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     slotClick: [date: string, entry: MealPlanEntryContract];
-    addClick: [date: string, mealType: MealType];
+    addClick: [date: string, mealType: MealType, slotIndex: number];
 }>();
 
 const isPast = computed(() => dayjs(props.date).isBefore(dayjs(), 'day'));
@@ -28,9 +28,10 @@ const slots = computed(() => {
     let snackIndex = 0;
     return SLOT_ORDER.map((mealType) => {
         if (mealType === 'snack') {
-            return { mealType, entry: snacks[snackIndex++] ?? null };
+            const idx = snackIndex++;
+            return { mealType, entry: snacks.find((e) => e.slot_index === idx) ?? null, slotIndex: idx };
         }
-        return { mealType, entry: props.entries.find((e) => e.meal_type === mealType) ?? null };
+        return { mealType, entry: props.entries.find((e) => e.meal_type === mealType) ?? null, slotIndex: 0 };
     });
 });
 </script>
@@ -48,7 +49,7 @@ const slots = computed(() => {
                     :entry="slot.entry"
                     @click="emit('slotClick', date, slot.entry!)"
                 />
-                <div v-else class="empty-slot" @click="emit('addClick', date, slot.mealType)">
+                <div v-else class="empty-slot" @click="emit('addClick', date, slot.mealType, slot.slotIndex)">
                     +
                 </div>
             </template>

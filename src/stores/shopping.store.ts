@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia';
 import type { IngredientCategory } from '../model/ingredient.contract.ts';
 import { INGREDIENT_CATEGORIES } from '../model/ingredient.contract.ts';
+import { ingredientFactor } from '../utils/recipe-macros.ts';
 import { ShoppingApi } from '../supabase/shopping.api.ts';
 import { useAuthStore } from './auth.store.ts';
+import { currentWeekStart } from '../utils/week.ts';
 import dayjs from 'dayjs';
 
 export interface AggregatedItem {
@@ -32,12 +34,15 @@ export const useShoppingStore = defineStore('shopping-store', {
         to: string;
         items: AggregatedItem[];
         loading: boolean;
-    } => ({
-        from: toIso(dayjs().startOf('week').add(1, 'day')),
-        to: toIso(dayjs().startOf('week').add(7, 'day')),
-        items: [],
-        loading: false
-    }),
+    } => {
+        const ws = currentWeekStart(useAuthStore().firstWeekDay);
+        return {
+            from: ws,
+            to: toIso(dayjs(ws).add(6, 'day')),
+            items: [],
+            loading: false
+        };
+    },
     getters: {
         categorizedList: (state): CategoryGroup[] => {
             return INGREDIENT_CATEGORIES
@@ -59,7 +64,7 @@ export const useShoppingStore = defineStore('shopping-store', {
                 const map = new Map<string, AggregatedItem>();
                 for (const item of raw) {
                     const { ingredient, quantity } = item;
-                    const factor = quantity / 100;
+                    const factor = ingredientFactor(quantity, ingredient);
                     const key = `${ingredient.name.toLowerCase()}|${ingredient.base_unit.toLowerCase()}|${ingredient.category}`;
                     const existing = map.get(key);
                     if (existing) {
