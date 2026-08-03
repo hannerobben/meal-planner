@@ -35,7 +35,7 @@ export const primevuePreset = definePreset(Aura, {
                     content: {
                         checkedBackground: '#a8d5a2',
                         checkedHoverBackground: '#90c98a',
-                        checkedColor: '#1a5c2a',
+                        checkedColor: '#1a5c2a'
                     }
                 }
             }
@@ -53,7 +53,7 @@ export const primevuePreset = definePreset(Aura, {
                             activeBorderColor: '#78bc72',
                             color: '#1a5c2a',
                             hoverColor: '#1a5c2a',
-                            activeColor: '#1a5c2a',
+                            activeColor: '#1a5c2a'
                         },
                         secondary: {
                             background: '#dbe8f5',
@@ -64,7 +64,21 @@ export const primevuePreset = definePreset(Aura, {
                             activeBorderColor: '#b5cae9',
                             color: '#1e3a5f',
                             hoverColor: '#1e3a5f',
-                            activeColor: '#1e3a5f',
+                            activeColor: '#1e3a5f'
+                        }
+                    },
+                    outlined: {
+                        primary: {
+                            borderColor: '#1a5c2a30',
+                            color: '#1a5c2a',
+                            hoverBackground: 'rgba(168, 213, 162, 0.16)',
+                            activeBackground: 'rgba(168, 213, 162, 0.28)'
+                        },
+                        secondary: {
+                            borderColor: '#9ab8d8',
+                            color: '#1e3a5f',
+                            hoverBackground: 'rgba(154, 184, 216, 0.16)',
+                            activeBackground: 'rgba(154, 184, 216, 0.28)'
                         }
                     }
                 }

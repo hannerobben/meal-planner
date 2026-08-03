@@ -19,6 +19,7 @@ import {
     FatLossGoal
 } from '../utils/nutrition.ts';
 import { ingredientFactor } from '../utils/recipe-macros.ts';
+import { generateMealPlan } from '../utils/generate-meal-plan.ts';
 import dayjs from 'dayjs';
 
 const planStore = usePlanStore();
@@ -26,6 +27,7 @@ const toast = useToast();
 const recipeStore = useRecipeStore();
 const authStore = useAuthStore();
 const { entries, weekStart, loading } = storeToRefs(planStore);
+const weekEnd = computed(() => dayjs(weekStart.value).add(6, 'day').format('YYYY-MM-DD'));
 const { recipes } = storeToRefs(recipeStore);
 const { appUser } = storeToRefs(authStore);
 
@@ -162,6 +164,42 @@ async function handleRemove() {
     }
 }
 
+const generating = ref(false);
+const generateConfirmVisible = ref(false);
+const clearConfirmVisible = ref(false);
+
+async function handleClear() {
+    clearConfirmVisible.value = false;
+    try {
+        await Promise.all(entries.value.map((e) => planStore.removeEntry(e.id)));
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Clear failed', detail: String(e), life: 4000 });
+    }
+}
+
+async function handleGenerate() {
+    generateConfirmVisible.value = false;
+    generating.value = true;
+    try {
+        await Promise.all(entries.value.map((e) => planStore.removeEntry(e.id)));
+        const generated = generateMealPlan(
+            weekStart.value,
+            weekEnd.value,
+            recipes.value,
+            targetMacros.value ?? { target_kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+        );
+        await Promise.all(
+            generated.map((e) =>
+                planStore.insertEntry(e.date, e.meal_type, e.slot_index, e.recipe_id, null)
+            )
+        );
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Generate failed', detail: String(e), life: 4000 });
+    } finally {
+        generating.value = false;
+    }
+}
+
 const weekLabel = () => {
     const start = dayjs(weekStart.value);
     const end = start.add(6, 'day');
@@ -203,6 +241,23 @@ function macrosForDate(date: string) {
             <Button icon="pi pi-chevron-left" text @click="planStore.prevWeek()" />
             <span class="week-label">{{ weekLabel() }}</span>
             <Button icon="pi pi-chevron-right" text @click="planStore.nextWeek()" />
+        </div>
+
+        <div class="plan-actions">
+            <Button
+                icon="pi pi-sparkles"
+                size="small"
+                outlined
+                :loading="generating"
+                @click="generateConfirmVisible = true"
+            />
+            <Button
+                icon="pi pi-trash"
+                size="small"
+                outlined
+                :disabled="!entries.length"
+                @click="clearConfirmVisible = true"
+            />
         </div>
 
         <div v-if="loading" class="loading">Loading…</div>
@@ -319,6 +374,42 @@ function macrosForDate(date: string) {
             @save="handleSave"
             @remove="handleRemove"
         />
+
+        <Dialog
+            v-model:visible="generateConfirmVisible"
+            header="Auto-fill week"
+            modal
+            style="width: min(320px, 92vw)"
+        >
+            <p style="margin: 0 0 4px">This will replace all meals for {{ weekLabel() }}.</p>
+            <template #footer>
+                <Button
+                    label="Cancel"
+                    text
+                    severity="secondary"
+                    @click="generateConfirmVisible = false"
+                />
+                <Button label="Auto-fill" icon="pi pi-sparkles" @click="handleGenerate" />
+            </template>
+        </Dialog>
+
+        <Dialog
+            v-model:visible="clearConfirmVisible"
+            header="Clear week"
+            modal
+            style="width: min(320px, 92vw)"
+        >
+            <p style="margin: 0 0 4px">Remove all meals for {{ weekLabel() }}?</p>
+            <template #footer>
+                <Button
+                    label="Cancel"
+                    text
+                    severity="secondary"
+                    @click="clearConfirmVisible = false"
+                />
+                <Button label="Clear" icon="pi pi-trash" severity="danger" @click="handleClear" />
+            </template>
+        </Dialog>
     </div>
 </template>
 
@@ -340,6 +431,13 @@ function macrosForDate(date: string) {
 
 .week-label {
     font-weight: 600;
+}
+
+.plan-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: -8px;
+    margin-bottom: -8px;
 }
 
 .macro-tabs {
