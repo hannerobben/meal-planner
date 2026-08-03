@@ -12,5 +12,6 @@ export interface MealPlanEntryContract {
     slot_index: number;
     recipe_id: string | null;
     free_text: string | null;
+    user_id: string | null;
     recipe?: RecipeContract;
 }

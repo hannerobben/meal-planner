@@ -13,8 +13,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
             manifest: {
-                name: 'Meal Planner',
-                short_name: 'Meals',
+                name: 'Mealio',
+                short_name: 'Mealio',
                 description: 'Household meal planner',
                 theme_color: '#2E7D32',
                 icons: [

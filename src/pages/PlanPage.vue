@@ -5,9 +5,12 @@ import { useToast } from 'primevue/usetoast';
 import { usePlanStore } from '../stores/plan.store.ts';
 import { useRecipeStore } from '../stores/recipe.store.ts';
 import { useAuthStore } from '../stores/auth.store.ts';
+import { HouseholdApi } from '../supabase/household.api.ts';
 import WeekGrid from '../components/plan/WeekGrid.vue';
 import MealSlotDialog from '../components/plan/MealSlotDialog.vue';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
+import type { AppUserContract } from '../model/user.contract.ts';
+import type { UserEntry } from '../components/plan/MealSlotDialog.vue';
 import {
     calculateBMR,
     calculateTDEE,
@@ -21,12 +24,26 @@ import dayjs from 'dayjs';
 const planStore = usePlanStore();
 const toast = useToast();
 const recipeStore = useRecipeStore();
+const authStore = useAuthStore();
 const { entries, weekStart, loading } = storeToRefs(planStore);
 const { recipes } = storeToRefs(recipeStore);
-const { appUser } = storeToRefs(useAuthStore());
+const { appUser } = storeToRefs(authStore);
+
+const householdUsers = ref<AppUserContract[]>([]);
+const selectedMacroUserId = ref<string | null>(null);
+
+const selectedMacroUser = computed(
+    () => householdUsers.value.find((u) => u.id === selectedMacroUserId.value) ?? appUser.value
+);
+
+const orderedHouseholdUserIds = computed(() =>
+    [...householdUsers.value]
+        .sort((a, b) => (a.id === appUser.value?.id ? -1 : b.id === appUser.value?.id ? 1 : 0))
+        .map((u) => u.id)
+);
 
 const targetMacros = computed(() => {
-    const u = appUser.value;
+    const u = selectedMacroUser.value;
     if (!u?.weight_kg || !u?.height_cm || !u?.age || !u?.sex || !u?.activity_level) return null;
     const bmr = calculateBMR({
         weight_kg: u.weight_kg,
@@ -61,38 +78,75 @@ function caret(actual: number, target: number | undefined): string {
 
 const dialogVisible = ref(false);
 const dialogDate = ref('');
-const dialogEntry = ref<MealPlanEntryContract | undefined>(undefined);
+const dialogSlotEntries = ref<MealPlanEntryContract[]>([]);
 const dialogInitialMealType = ref<MealType>('breakfast');
 const dialogSlotIndex = ref(0);
 
 onMounted(async () => {
-    await Promise.all([planStore.fetchWeek(), recipeStore.fetchAll()]);
+    const householdId = authStore.householdId;
+    await Promise.all([
+        planStore.fetchWeek(),
+        recipeStore.fetchAll(),
+        householdId
+            ? HouseholdApi.getUsers(householdId).then((u) => {
+                  householdUsers.value = u;
+                  selectedMacroUserId.value = appUser.value?.id ?? u[0]?.id ?? null;
+              })
+            : Promise.resolve()
+    ]);
 });
 
 function openNew(date: string, mealType: MealType, slotIndex: number) {
     dialogDate.value = date;
-    dialogEntry.value = undefined;
+    dialogSlotEntries.value = [];
     dialogInitialMealType.value = mealType;
     dialogSlotIndex.value = slotIndex;
     dialogVisible.value = true;
 }
 
-function openEntry(date: string, entry: MealPlanEntryContract) {
+function openEntry(date: string, entries: MealPlanEntryContract[]) {
     dialogDate.value = date;
-    dialogEntry.value = entry;
+    dialogSlotEntries.value = entries;
     dialogVisible.value = true;
 }
 
-async function handleSave(
-    mealType: MealType | null,
-    recipeId: string | null,
-    freeText: string | null
-) {
+async function handleSave(mealType: MealType | null, userEntries: UserEntry[]) {
     try {
+        const existing = dialogSlotEntries.value;
         if (mealType) {
-            await planStore.insertEntry(dialogDate.value, mealType, dialogSlotIndex.value, recipeId, freeText);
-        } else if (dialogEntry.value) {
-            await planStore.updateEntry(dialogEntry.value.id, recipeId, freeText);
+            await Promise.all(
+                userEntries.map((ue) =>
+                    planStore.insertEntry(
+                        dialogDate.value,
+                        mealType,
+                        dialogSlotIndex.value,
+                        ue.recipeId,
+                        ue.freeText,
+                        ue.userId
+                    )
+                )
+            );
+        } else if (existing.length > 0) {
+            const byUser = new Map(existing.map((e) => [e.user_id, e]));
+            const slotMealType = existing[0].meal_type;
+            const slotIndex = existing[0].slot_index;
+            await Promise.all(
+                userEntries.map((ue) => {
+                    const match = byUser.get(ue.userId);
+                    byUser.delete(ue.userId);
+                    return match
+                        ? planStore.updateEntry(match.id, ue.recipeId, ue.freeText, ue.userId)
+                        : planStore.insertEntry(
+                              dialogDate.value,
+                              slotMealType,
+                              slotIndex,
+                              ue.recipeId,
+                              ue.freeText,
+                              ue.userId
+                          );
+                })
+            );
+            await Promise.all([...byUser.values()].map((e) => planStore.removeEntry(e.id)));
         }
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
@@ -100,9 +154,9 @@ async function handleSave(
 }
 
 async function handleRemove() {
-    if (!dialogEntry.value) return;
+    if (!dialogSlotEntries.value.length) return;
     try {
-        await planStore.removeEntry(dialogEntry.value.id);
+        await Promise.all(dialogSlotEntries.value.map((e) => planStore.removeEntry(e.id)));
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Remove failed', detail: String(e), life: 4000 });
     }
@@ -121,7 +175,10 @@ function getDates(): string[] {
 }
 
 function macrosForDate(date: string) {
-    const dayEntries = entries.value.filter((e) => e.date === date);
+    const userId = selectedMacroUserId.value;
+    const dayEntries = entries.value.filter(
+        (e) => e.date === date && (e.user_id === null || e.user_id === userId)
+    );
     return dayEntries.reduce(
         (acc, e) => {
             const ings = e.recipe?.ingredients ?? [];
@@ -153,9 +210,24 @@ function macrosForDate(date: string) {
             v-else
             :weekStart="weekStart"
             :entries="entries"
-            @slotClick="(date, entry) => openEntry(date, entry)"
+            :householdUserIds="orderedHouseholdUserIds"
+            @slotClick="(date, entries) => openEntry(date, entries)"
             @addClick="(date, mealType, slotIndex) => openNew(date, mealType, slotIndex)"
         />
+        <div v-if="!loading && householdUsers.length > 1" class="macro-tabs">
+            <button
+                v-for="user in [...householdUsers].sort((a, b) =>
+                    a.id === appUser?.id ? -1 : b.id === appUser?.id ? 1 : 0
+                )"
+                :key="user.id"
+                class="macro-tab"
+                :class="{ active: selectedMacroUserId === user.id }"
+                @click="selectedMacroUserId = user.id"
+            >
+                {{ user.display_name }}
+            </button>
+        </div>
+
         <div v-if="!loading" class="macro-row">
             <div v-for="date in getDates()" :key="date" class="macro-cell">
                 <span
@@ -239,9 +311,10 @@ function macrosForDate(date: string) {
 
         <MealSlotDialog
             v-model:visible="dialogVisible"
-            :entry="dialogEntry"
+            :slotEntries="dialogSlotEntries"
             :date="dialogDate"
             :recipes="recipes"
+            :householdUsers="householdUsers"
             :initialMealType="dialogInitialMealType"
             @save="handleSave"
             @remove="handleRemove"
@@ -267,6 +340,28 @@ function macrosForDate(date: string) {
 
 .week-label {
     font-weight: 600;
+}
+
+.macro-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 12px;
+    margin-bottom: -8px;
+}
+
+.macro-tab {
+    padding: 4px 14px;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    color: #555;
+    font-size: 0.8em;
+    cursor: pointer;
+
+    &.active {
+        background: white;
+        color: #2e7d32;
+        font-weight: 600;
+    }
 }
 
 .loading {

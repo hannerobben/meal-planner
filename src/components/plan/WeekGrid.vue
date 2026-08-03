@@ -6,10 +6,11 @@ import dayjs from 'dayjs';
 const props = defineProps<{
     weekStart: string;
     entries: MealPlanEntryContract[];
+    householdUserIds: string[];
 }>();
 
 const emit = defineEmits<{
-    slotClick: [date: string, entry: MealPlanEntryContract];
+    slotClick: [date: string, entries: MealPlanEntryContract[]];
     addClick: [date: string, mealType: MealType, slotIndex: number];
 }>();
 
@@ -31,7 +32,8 @@ function entriesForDate(date: string) {
             :key="date"
             :date="date"
             :entries="entriesForDate(date)"
-            @slotClick="(date, entry) => emit('slotClick', date, entry)"
+            :householdUserIds="householdUserIds"
+            @slotClick="(date, entries) => emit('slotClick', date, entries)"
             @addClick="(date, mealType, slotIndex) => emit('addClick', date, mealType, slotIndex)"
         />
     </div>

@@ -41,14 +41,14 @@ export const usePlanStore = defineStore('plan-store', {
             this.weekStart = toIso(dayjs(this.weekStart).add(7, 'day'));
             this.fetchWeek();
         },
-        async insertEntry(date: string, mealType: MealType, slotIndex: number, recipeId: string | null, freeText: string | null) {
+        async insertEntry(date: string, mealType: MealType, slotIndex: number, recipeId: string | null, freeText: string | null, userId: string | null = null) {
             const householdId = useAuthStore().householdId;
             if (!householdId) return;
-            const entry = await PlanApi.insert(householdId, date, mealType, slotIndex, recipeId, freeText);
+            const entry = await PlanApi.insert(householdId, date, mealType, slotIndex, recipeId, freeText, userId);
             this.entries.push(entry);
         },
-        async updateEntry(id: string, recipeId: string | null, freeText: string | null) {
-            await PlanApi.update(id, recipeId, freeText);
+        async updateEntry(id: string, recipeId: string | null, freeText: string | null, userId: string | null = null) {
+            await PlanApi.update(id, recipeId, freeText, userId);
             await this.fetchWeek();
         },
         async removeEntry(id: string) {

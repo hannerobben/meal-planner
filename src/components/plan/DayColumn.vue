@@ -9,10 +9,11 @@ const SLOT_ORDER: MealType[] = ['breakfast', 'snack', 'lunch', 'snack', 'dinner'
 const props = defineProps<{
     date: string;
     entries: MealPlanEntryContract[];
+    householdUserIds: string[];
 }>();
 
 const emit = defineEmits<{
-    slotClick: [date: string, entry: MealPlanEntryContract];
+    slotClick: [date: string, entries: MealPlanEntryContract[]];
     addClick: [date: string, mealType: MealType, slotIndex: number];
 }>();
 
@@ -23,15 +24,35 @@ const dayLabel = computed(() => {
     return { day: d.toLocaleDateString('en-GB', { weekday: 'short' }), date: d.getDate() };
 });
 
+function sortByUser(entries: MealPlanEntryContract[]): MealPlanEntryContract[] {
+    return [...entries].sort((a, b) => {
+        if (a.user_id === b.user_id) return 0;
+        if (a.user_id === null) return -1;
+        if (b.user_id === null) return 1;
+        return a.user_id.localeCompare(b.user_id);
+    });
+}
+
+function toPerUser(entries: MealPlanEntryContract[]): (MealPlanEntryContract | null)[] | null {
+    if (!entries.some((e) => e.user_id !== null)) return null;
+    return props.householdUserIds.map((uid) => entries.find((e) => e.user_id === uid) ?? null);
+}
+
 const slots = computed(() => {
     const snacks = props.entries.filter((e) => e.meal_type === 'snack');
     let snackIndex = 0;
     return SLOT_ORDER.map((mealType) => {
+        let slotEntries: MealPlanEntryContract[];
+        let slotIndex: number;
         if (mealType === 'snack') {
             const idx = snackIndex++;
-            return { mealType, entry: snacks.find((e) => e.slot_index === idx) ?? null, slotIndex: idx };
+            slotEntries = sortByUser(snacks.filter((e) => e.slot_index === idx));
+            slotIndex = idx;
+        } else {
+            slotEntries = sortByUser(props.entries.filter((e) => e.meal_type === mealType));
+            slotIndex = 0;
         }
-        return { mealType, entry: props.entries.find((e) => e.meal_type === mealType) ?? null, slotIndex: 0 };
+        return { mealType, entries: slotEntries, slotIndex, perUser: toPerUser(slotEntries) };
     });
 });
 </script>
@@ -44,12 +65,33 @@ const slots = computed(() => {
         </div>
         <div class="slots">
             <template v-for="(slot, i) in slots" :key="i">
+                <div v-if="slot.perUser" class="slot-row" @click="emit('slotClick', date, slot.entries)">
+                    <div
+                        v-for="(entry, pi) in slot.perUser"
+                        :key="pi"
+                        class="slot-part"
+                        :class="{ 'slot-part-divider': pi > 0, 'slot-part-empty': !entry }"
+                        :style="
+                            entry?.recipe?.image_url
+                                ? {
+                                      backgroundImage: `url(${entry.recipe.image_url})`,
+                                      backgroundSize: 'cover',
+                                      backgroundPosition: 'center'
+                                  }
+                                : {}
+                        "
+                    />
+                </div>
                 <MealSlot
-                    v-if="slot.entry"
-                    :entry="slot.entry"
-                    @click="emit('slotClick', date, slot.entry!)"
+                    v-else-if="slot.entries.length === 1"
+                    :entry="slot.entries[0]"
+                    @click="emit('slotClick', date, slot.entries)"
                 />
-                <div v-else class="empty-slot" @click="emit('addClick', date, slot.mealType, slot.slotIndex)">
+                <div
+                    v-else
+                    class="empty-slot"
+                    @click="emit('addClick', date, slot.mealType, slot.slotIndex)"
+                >
                     +
                 </div>
             </template>
@@ -89,6 +131,35 @@ const slots = computed(() => {
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+.slot-row {
+    display: flex;
+    min-height: 36px;
+    border-radius: 6px;
+    border: 1px solid #9bbd9d;
+    background: #f1f8e9;
+    overflow: hidden;
+}
+
+.slot-part {
+    flex: 1;
+    min-height: 36px;
+    cursor: pointer;
+}
+
+.slot-part-divider {
+    border-left: 1px solid #9bbd9d;
+}
+
+.slot-part-empty {
+    background: repeating-linear-gradient(
+        -45deg,
+        white,
+        white 4px,
+        #e0e0e0 4px,
+        #e0e0e0 8px
+    );
 }
 
 .empty-slot {

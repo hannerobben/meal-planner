@@ -26,11 +26,12 @@ export class PlanApi {
         mealType: MealType,
         slotIndex: number,
         recipeId: string | null,
-        freeText: string | null
+        freeText: string | null,
+        userId: string | null = null
     ): Promise<MealPlanEntryContract> {
         const { data, error } = await supabase
             .from('meal_plan_entries')
-            .insert({ household_id: householdId, date, meal_type: mealType, slot_index: slotIndex, recipe_id: recipeId, free_text: freeText })
+            .insert({ household_id: householdId, date, meal_type: mealType, slot_index: slotIndex, recipe_id: recipeId, free_text: freeText, user_id: userId })
             .select(SELECT)
             .single();
         if (error) throw error;
@@ -40,11 +41,12 @@ export class PlanApi {
     public static async update(
         id: string,
         recipeId: string | null,
-        freeText: string | null
+        freeText: string | null,
+        userId: string | null = null
     ): Promise<MealPlanEntryContract> {
         const { data, error } = await supabase
             .from('meal_plan_entries')
-            .update({ recipe_id: recipeId, free_text: freeText })
+            .update({ recipe_id: recipeId, free_text: freeText, user_id: userId })
             .eq('id', id)
             .select(SELECT)
             .single();

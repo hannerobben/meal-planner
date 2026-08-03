@@ -2,40 +2,64 @@
 import { ref, computed, watch } from 'vue';
 import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entry.contract.ts';
 import type { RecipeContract } from '../../model/recipe.contract.ts';
+import type { AppUserContract } from '../../model/user.contract.ts';
 import { MEAL_TYPE_COLORS } from '../../model/type-colors.ts';
 import Divider from 'primevue/divider';
 
 const props = defineProps<{
     visible: boolean;
-    entry: MealPlanEntryContract | undefined;
+    slotEntries: MealPlanEntryContract[];
     date: string;
     recipes: RecipeContract[];
+    householdUsers: AppUserContract[];
     initialMealType?: MealType;
 }>();
 
+export type UserEntry = { userId: string | null; recipeId: string | null; freeText: string | null };
+
 const emit = defineEmits<{
     'update:visible': [value: boolean];
-    save: [mealType: MealType | null, recipeId: string | null, freeText: string | null];
+    save: [mealType: MealType | null, userEntries: UserEntry[]];
     remove: [];
 }>();
 
 const selectedRecipeId = ref<string | null>(null);
+const originalRecipeId = ref<string | null>(null);
+const definePerUser = ref(false);
+const perUserRecipeIds = ref<Record<string, string | null>>({});
+const originalPerUserRecipeIds = ref<Record<string, string | null>>({});
 const showRecipeViewer = ref(false);
+const viewingRecipeId = ref<string | null>(null);
 const portions = ref(1);
 
 const displayMealType = computed(
-    () => props.entry?.meal_type ?? props.initialMealType ?? 'breakfast'
+    () => props.slotEntries[0]?.meal_type ?? props.initialMealType ?? 'breakfast'
 );
 
-const selectedRecipe = computed<RecipeContract | undefined>(() =>
-    selectedRecipeId.value ? props.recipes.find((r) => r.id === selectedRecipeId.value) : undefined
+const viewingRecipe = computed<RecipeContract | undefined>(() =>
+    viewingRecipeId.value ? props.recipes.find((r) => r.id === viewingRecipeId.value) : undefined
 );
+
 
 watch(
     () => props.visible,
     (v) => {
         if (!v) return;
-        selectedRecipeId.value = props.entry?.recipe_id ?? null;
+        perUserRecipeIds.value = Object.fromEntries(props.householdUsers.map((u) => [u.id, null]));
+        const isPerUser = props.slotEntries.some((e) => e.user_id !== null);
+        if (isPerUser) {
+            definePerUser.value = true;
+            for (const e of props.slotEntries) {
+                if (e.user_id) perUserRecipeIds.value[e.user_id] = e.recipe_id;
+            }
+            selectedRecipeId.value = null;
+            originalRecipeId.value = null;
+        } else {
+            definePerUser.value = false;
+            selectedRecipeId.value = props.slotEntries[0]?.recipe_id ?? null;
+            originalRecipeId.value = props.slotEntries[0]?.recipe_id ?? null;
+        }
+        originalPerUserRecipeIds.value = { ...perUserRecipeIds.value };
     }
 );
 
@@ -45,17 +69,34 @@ const recipeOptions = computed(() =>
         .map((r) => ({ label: r.name, value: r.id }))
 );
 
-const canSave = computed(() => !!selectedRecipeId.value);
+const canSave = computed(() => {
+    if (definePerUser.value) {
+        return props.householdUsers.some((u) => !!perUserRecipeIds.value[u.id]);
+    }
+    return !!selectedRecipeId.value;
+});
 
-function openRecipeViewer() {
+function openRecipeViewer(recipeId: string | null) {
+    if (!recipeId) return;
+    viewingRecipeId.value = recipeId;
     portions.value = 1;
     emit('update:visible', false);
     showRecipeViewer.value = true;
 }
 
 function handleSave() {
-    const mealType = props.entry ? null : displayMealType.value;
-    emit('save', mealType, selectedRecipeId.value, null);
+    const mealType = props.slotEntries.length > 0 ? null : displayMealType.value;
+    let userEntries: UserEntry[];
+
+    if (definePerUser.value) {
+        userEntries = props.householdUsers
+            .filter((u) => !!perUserRecipeIds.value[u.id])
+            .map((u) => ({ userId: u.id, recipeId: perUserRecipeIds.value[u.id] ?? null, freeText: null }));
+    } else {
+        userEntries = [{ userId: null, recipeId: selectedRecipeId.value, freeText: null }];
+    }
+
+    emit('save', mealType, userEntries);
     emit('update:visible', false);
 }
 
@@ -83,31 +124,63 @@ const title = computed(() =>
                 >{{ displayMealType }}</span
             >
 
-            <Select
-                v-model="selectedRecipeId"
-                :options="recipeOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Choose a recipe…"
-                filter
-                style="width: 100%"
-            />
+            <div v-if="householdUsers.length > 1" class="per-user-toggle">
+                <ToggleSwitch v-model="definePerUser" inputId="per-user-toggle" />
+                <label for="per-user-toggle">Define per user</label>
+            </div>
 
-            <template v-if="selectedRecipe">
-                <Button
-                    label="Show Recipe"
-                    severity="secondary"
+            <!-- Single mode -->
+            <template v-if="!definePerUser">
+                <Select
+                    v-model="selectedRecipeId"
+                    :options="recipeOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Choose a recipe…"
+                    filter
                     style="width: 100%"
-                    @click="openRecipeViewer"
                 />
-                <Divider />
+                <template v-if="selectedRecipeId && selectedRecipeId === originalRecipeId">
+                    <Button
+                        label="Show Recipe"
+                        severity="secondary"
+                        style="width: 100%"
+                        @click="openRecipeViewer(selectedRecipeId)"
+                    />
+                    <Divider />
+                </template>
+            </template>
+
+            <!-- Per-user mode -->
+            <template v-else>
+                <div v-for="user in householdUsers" :key="user.id" class="user-form">
+                    <div class="user-form-name">{{ user.display_name }}</div>
+                    <Select
+                        v-model="perUserRecipeIds[user.id]"
+                        :options="recipeOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Choose a recipe…"
+                        filter
+                        style="width: 100%"
+                    />
+                    <template v-if="perUserRecipeIds[user.id] && perUserRecipeIds[user.id] === originalPerUserRecipeIds[user.id]">
+                        <Button
+                            label="Show Recipe"
+                            severity="secondary"
+                            style="width: 100%"
+                            @click="openRecipeViewer(perUserRecipeIds[user.id])"
+                        />
+                        <Divider />
+                    </template>
+                </div>
             </template>
         </div>
 
         <template #footer>
             <div class="dialog-footer">
                 <Button
-                    v-if="entry"
+                    v-if="slotEntries.length > 0"
                     label="Remove"
                     text
                     severity="danger"
@@ -130,15 +203,15 @@ const title = computed(() =>
 
     <Dialog
         v-model:visible="showRecipeViewer"
-        :header="selectedRecipe?.name"
+        :header="viewingRecipe?.name"
         modal
         style="width: 340px"
     >
         <div class="recipe-viewer">
             <div
-                v-if="selectedRecipe?.image_url"
+                v-if="viewingRecipe?.image_url"
                 class="recipe-image"
-                :style="{ backgroundImage: `url(${selectedRecipe.image_url})` }"
+                :style="{ backgroundImage: `url(${viewingRecipe.image_url})` }"
             />
 
             <div class="portion-control">
@@ -154,8 +227,8 @@ const title = computed(() =>
 
             <Divider />
 
-            <div v-if="selectedRecipe?.ingredients?.length" class="ingredient-list">
-                <div v-for="ri in selectedRecipe.ingredients" :key="ri.id" class="ingredient-row">
+            <div v-if="viewingRecipe?.ingredients?.length" class="ingredient-list">
+                <div v-for="ri in viewingRecipe.ingredients" :key="ri.id" class="ingredient-row">
                     <span class="ingredient-name">{{ ri.ingredient?.name }}</span>
                     <span class="ingredient-qty">
                         {{ ri.quantity * portions }}{{ ri.ingredient?.base_unit !== 'item' ? ri.ingredient?.base_unit : '' }}
@@ -164,9 +237,9 @@ const title = computed(() =>
             </div>
             <p v-else class="no-ingredients">No ingredients listed.</p>
 
-            <template v-if="selectedRecipe?.notes">
+            <template v-if="viewingRecipe?.notes">
                 <Divider />
-                <p class="recipe-notes">{{ selectedRecipe.notes }}</p>
+                <p class="recipe-notes">{{ viewingRecipe.notes }}</p>
             </template>
         </div>
     </Dialog>
@@ -178,6 +251,29 @@ const title = computed(() =>
     flex-direction: column;
     gap: 14px;
     padding: 4px 0 8px;
+}
+
+.per-user-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+
+    label {
+        cursor: pointer;
+    }
+}
+
+.user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.user-form-name {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #555;
 }
 
 .type-badge {
