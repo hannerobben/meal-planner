@@ -55,6 +55,11 @@ export class RecipeApi {
         if (error) throw error;
     }
 
+    public static async updateImageUrl(id: string, image_url: string | null): Promise<void> {
+        const { error } = await supabase.from('recipes').update({ image_url }).eq('id', id);
+        if (error) throw error;
+    }
+
     public static async uploadImage(recipeId: string, file: File): Promise<string> {
         const { error } = await supabase.storage
             .from('recipe-images')

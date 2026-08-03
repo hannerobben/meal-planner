@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useRecipeStore } from '../stores/recipe.store.ts';
@@ -12,13 +12,17 @@ const { currentRecipe, loading } = storeToRefs(recipeStore);
 
 const isNew = computed(() => route.params.id === 'new');
 
-onMounted(async () => {
-    if (!isNew.value) {
-        await recipeStore.fetchById(route.params.id as string);
-    } else {
-        recipeStore.currentRecipe = undefined;
-    }
-});
+watch(
+    () => route.params.id,
+    async (id) => {
+        if (id === 'new') {
+            recipeStore.currentRecipe = undefined;
+        } else {
+            await recipeStore.fetchById(id as string);
+        }
+    },
+    { immediate: true }
+);
 </script>
 
 <template>

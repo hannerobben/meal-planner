@@ -211,7 +211,7 @@ async function handleSignOut() {
                 </div>
             </div>
 
-            <Button label="Save" @click="saveNutritionProfile" class="save-btn" />
+            <Button label="Save" @click="saveNutritionProfile" class="save-btn" fluid />
 
             <Divider />
         </div>
@@ -222,6 +222,7 @@ async function handleSignOut() {
             outlined
             @click="handleSignOut"
             class="signout"
+            fluid
         />
     </div>
 </template>
@@ -336,14 +337,7 @@ async function handleSignOut() {
     margin-top: 2px;
 }
 
-.save-btn {
-    width: fit-content;
-    align-self: flex-end;
-}
-
 .signout {
     margin-top: 8px;
-    width: fit-content;
-    align-self: flex-end;
 }
 </style>

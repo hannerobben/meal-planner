@@ -2,7 +2,12 @@
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useIngredientStore } from '../stores/ingredient.store.ts';
-import { INGREDIENT_CATEGORIES, INGREDIENT_UNITS, type IngredientCategory, type IngredientUnit } from '../model/ingredient.contract.ts';
+import {
+    INGREDIENT_CATEGORIES,
+    INGREDIENT_UNITS,
+    type IngredientCategory,
+    type IngredientUnit
+} from '../model/ingredient.contract.ts';
 import { INGREDIENT_CATEGORY_COLORS } from '../model/type-colors.ts';
 import type { IngredientContract } from '../model/ingredient.contract.ts';
 import type { IngredientInput } from '../supabase/ingredient.api.ts';
@@ -92,6 +97,25 @@ async function saveEdit() {
         showEditDialog.value = false;
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
+    }
+}
+
+const showDeleteConfirm = ref(false);
+
+async function deleteIngredient() {
+    if (!editingIngredient.value) return;
+    try {
+        const name = editingIngredient.value.name;
+        await store.remove(editingIngredient.value.id);
+        showDeleteConfirm.value = false;
+        showEditDialog.value = false;
+        toast.add({ severity: 'success', summary: 'Deleted', detail: `"${name}" was deleted`, life: 3000 });
+    } catch (e: any) {
+        if (e?.code === '23503') {
+            toast.add({ severity: 'warn', summary: 'Cannot delete', detail: 'Ingredient is used in one or more recipes', life: 4000 });
+        } else {
+            toast.add({ severity: 'error', summary: 'Delete failed', detail: String(e), life: 4000 });
+        }
     }
 }
 
@@ -229,7 +253,11 @@ async function saveNew() {
                 </div>
                 <div v-if="editDraft.base_unit === 'item'" class="field">
                     <label>Grams per item</label>
-                    <InputNumber v-model="editDraft.grams_per_item" :min="0" placeholder="e.g. 60" />
+                    <InputNumber
+                        v-model="editDraft.grams_per_item"
+                        :min="0"
+                        placeholder="e.g. 60"
+                    />
                 </div>
                 <div class="macro-row">
                     <div class="field">
@@ -251,8 +279,42 @@ async function saveNew() {
                 </div>
             </div>
             <template #footer>
-                <Button label="Cancel" text severity="secondary" @click="showEditDialog = false" />
-                <Button label="Save" @click="saveEdit" :disabled="!editDraft.name.trim()" />
+                <div class="dialog-footer">
+                    <Button
+                        label="Delete"
+                        text
+                        severity="danger"
+                        @click="showDeleteConfirm = true"
+                    />
+                    <div class="dialog-footer-right">
+                        <Button
+                            label="Cancel"
+                            text
+                            severity="secondary"
+                            @click="showEditDialog = false"
+                        />
+                        <Button label="Save" @click="saveEdit" :disabled="!editDraft.name.trim()" />
+                    </div>
+                </div>
+            </template>
+        </Dialog>
+
+        <!-- Delete confirmation dialog -->
+        <Dialog
+            v-model:visible="showDeleteConfirm"
+            header="Delete ingredient"
+            modal
+            style="width: 320px; max-width: 96vw"
+        >
+            <p style="margin: 0">Delete "{{ editingIngredient?.name }}"?</p>
+            <template #footer>
+                <Button
+                    label="Cancel"
+                    text
+                    severity="secondary"
+                    @click="showDeleteConfirm = false"
+                />
+                <Button label="Delete" severity="danger" @click="deleteIngredient" />
             </template>
         </Dialog>
 
@@ -430,6 +492,18 @@ async function saveNew() {
     .field {
         min-width: 0;
     }
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.dialog-footer-right {
+    display: flex;
+    gap: 8px;
 }
 
 .macro-row :deep(.p-inputnumber-input) {

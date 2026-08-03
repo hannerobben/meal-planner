@@ -5,7 +5,11 @@ import { useAuthStore } from '../../stores/auth.store.ts';
 import { useIngredientStore } from '../../stores/ingredient.store.ts';
 import { RecipeApi } from '../../supabase/recipe.api.ts';
 import type { RecipeContract } from '../../model/recipe.contract.ts';
-import type { IngredientContract, IngredientCategory, IngredientUnit } from '../../model/ingredient.contract.ts';
+import type {
+    IngredientContract,
+    IngredientCategory,
+    IngredientUnit
+} from '../../model/ingredient.contract.ts';
 import { INGREDIENT_CATEGORIES, INGREDIENT_UNITS } from '../../model/ingredient.contract.ts';
 import { sumMacros } from '../../utils/recipe-macros.ts';
 import type { IngredientInput } from '../../supabase/ingredient.api.ts';
@@ -46,19 +50,40 @@ const previewUrl = computed(() => {
     return currentImageUrl.value;
 });
 
+async function saveImageOnly() {
+    // New recipe with no name yet — can't create a record to attach the image to
+    if (!recipeId.value && !name.value.trim()) return;
+    const id = await ensureRecipeExists();
+    if (!id) return;
+    try {
+        if (removeImageFlag.value) {
+            await RecipeApi.deleteImage(id);
+            currentImageUrl.value = null;
+            removeImageFlag.value = false;
+            await RecipeApi.updateImageUrl(id, null);
+        } else if (pendingImageFile.value) {
+            currentImageUrl.value = await RecipeApi.uploadImage(id, pendingImageFile.value);
+            pendingImageFile.value = null;
+            await RecipeApi.updateImageUrl(id, currentImageUrl.value);
+        }
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
+    }
+}
+
 async function onFileChange(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     pendingImageFile.value = file;
     removeImageFlag.value = false;
-    await saveRecipe();
+    await saveImageOnly();
 }
 
 async function clearImage() {
     pendingImageFile.value = null;
     removeImageFlag.value = true;
     if (fileInput.value) fileInput.value.value = '';
-    await saveRecipe();
+    await saveImageOnly();
 }
 
 let _keyCounter = 0;
@@ -72,9 +97,8 @@ const ingredients = ref<RecipeIngredientRowData[]>(
     })) ?? []
 );
 
-async function removeIngredient(index: number) {
+function removeIngredient(index: number) {
     ingredients.value.splice(index, 1);
-    await saveIngredients();
 }
 
 type IngredientSuggestion = IngredientContract | { id: '__new__'; name: string };
@@ -105,7 +129,6 @@ async function onIngredientSelect(event: { value: IngredientSuggestion }) {
         ingredient: ing,
         quantity: 0
     });
-    await saveIngredients();
 }
 
 const showCreateDialog = ref(false);
@@ -152,7 +175,6 @@ async function saveNew() {
             quantity: 0
         });
         showCreateDialog.value = false;
-        await saveIngredients();
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
     }
@@ -183,18 +205,9 @@ async function ensureRecipeExists(): Promise<string | null> {
 }
 
 async function saveRecipe() {
-    if (!name.value.trim()) return;
     const id = await ensureRecipeExists();
     if (!id) return;
     try {
-        if (removeImageFlag.value) {
-            await RecipeApi.deleteImage(id);
-            currentImageUrl.value = null;
-            removeImageFlag.value = false;
-        } else if (pendingImageFile.value) {
-            currentImageUrl.value = await RecipeApi.uploadImage(id, pendingImageFile.value);
-            pendingImageFile.value = null;
-        }
         await RecipeApi.update(
             id,
             name.value.trim(),
@@ -223,6 +236,20 @@ async function saveIngredients() {
 const totals = computed(() => {
     return sumMacros(ingredients.value);
 });
+
+const saving = ref(false);
+
+async function handleSave() {
+    if (!name.value.trim()) return;
+    saving.value = true;
+    try {
+        await saveRecipe();
+        await saveIngredients();
+        toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+    } finally {
+        saving.value = false;
+    }
+}
 </script>
 
 <template>
@@ -250,7 +277,7 @@ const totals = computed(() => {
 
         <div class="field">
             <label>Name *</label>
-            <InputText v-model="name" placeholder="Recipe name" @blur="saveRecipe" />
+            <InputText v-model="name" placeholder="Recipe name" />
         </div>
 
         <div class="field">
@@ -262,19 +289,12 @@ const totals = computed(() => {
                 optionValue="value"
                 multiple
                 :allowEmpty="false"
-                @change="saveRecipe"
             />
         </div>
 
         <div class="field">
             <label>Notes</label>
-            <Textarea
-                v-model="notes"
-                placeholder="Instructions, tips…"
-                rows="3"
-                autoResize
-                @blur="saveRecipe"
-            />
+            <Textarea v-model="notes" placeholder="Instructions, tips…" rows="3" autoResize />
         </div>
 
         <div class="ingredients-section">
@@ -305,7 +325,6 @@ const totals = computed(() => {
                 :key="ing._key"
                 v-model="ingredients[idx]"
                 @remove="removeIngredient(idx)"
-                @quantityBlur="saveIngredients"
             />
 
             <div v-if="ingredients.length" class="totals">
@@ -315,6 +334,15 @@ const totals = computed(() => {
                 <span class="macro">F: {{ Math.round(totals.fat_g * 10) / 10 }}g</span>
             </div>
         </div>
+
+        <Button
+            label="Save recipe"
+            icon="pi pi-check"
+            :loading="saving"
+            :disabled="!name.trim()"
+            @click="handleSave"
+            class="save-btn"
+        />
 
         <Dialog
             v-model:visible="showCreateDialog"
@@ -350,7 +378,12 @@ const totals = computed(() => {
                 </div>
                 <div v-if="newDraft.base_unit === 'item'" class="field">
                     <label>Grams per item</label>
-                    <InputNumber v-model="newDraft.grams_per_item" :min="0" placeholder="e.g. 60" fluid />
+                    <InputNumber
+                        v-model="newDraft.grams_per_item"
+                        :min="0"
+                        placeholder="e.g. 60"
+                        fluid
+                    />
                 </div>
                 <div class="macro-row">
                     <div class="field">
@@ -484,6 +517,10 @@ const totals = computed(() => {
     }
 }
 
+.save-btn {
+    width: 100%;
+}
+
 .ingredient-labels {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 100px) 3rem 2.5rem;
@@ -497,7 +534,6 @@ const totals = computed(() => {
     margin-top: 12px;
     font-size: 0.9em;
     color: #333;
-    border: 1px solid lightgray;
     padding: 8px 12px;
     border-radius: 8px;
     background: white;
@@ -507,12 +543,14 @@ const totals = computed(() => {
     gap: 4px;
 
     .macro {
-        background-color: #adebe0;
-        color: #006351;
         padding: 2px 6px;
-        border-radius: 4px;
         flex: 1;
         text-align: center;
+        border-right: 1px solid #ddd;
+
+        &:last-child {
+            border-right: none;
+        }
     }
 }
 </style>
