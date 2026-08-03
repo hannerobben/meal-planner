@@ -8,6 +8,7 @@ export interface RecipeContract {
     type: MealType[];
     notes: string | null;
     image_url: string | null;
+    not_suggested: boolean;
     created_at: string;
     ingredients?: RecipeIngredientContract[];
 }

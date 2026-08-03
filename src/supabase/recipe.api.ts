@@ -46,11 +46,12 @@ export class RecipeApi {
         name: string,
         type: MealType[],
         notes: string | null,
-        image_url: string | null
+        image_url: string | null,
+        not_suggested: boolean
     ): Promise<void> {
         const { error } = await supabase
             .from('recipes')
-            .update({ name, type, notes, image_url })
+            .update({ name, type, notes, image_url, not_suggested })
             .eq('id', id);
         if (error) throw error;
     }

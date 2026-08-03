@@ -63,11 +63,12 @@ watch(
     }
 );
 
-const recipeOptions = computed(() =>
-    props.recipes
-        .filter((r) => r.type.includes(displayMealType.value))
-        .map((r) => ({ label: r.name, value: r.id }))
-);
+const recipeOptions = computed(() => {
+    const existingIds = new Set(props.slotEntries.map((e) => e.recipe_id).filter(Boolean));
+    return props.recipes
+        .filter((r) => r.type.includes(displayMealType.value) && (!r.not_suggested || existingIds.has(r.id)))
+        .map((r) => ({ label: r.name, value: r.id }));
+});
 
 const canSave = computed(() => {
     if (definePerUser.value) {

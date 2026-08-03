@@ -30,6 +30,7 @@ onMounted(() => {
 const name = ref(props.recipe?.name ?? '');
 const type = ref<MealType[]>(props.recipe?.type ?? ['dinner']);
 const notes = ref(props.recipe?.notes ?? '');
+const notSuggested = ref(props.recipe?.not_suggested ?? false);
 
 const typeOptions = MEAL_TYPES.map((t) => ({
     label: t.charAt(0).toUpperCase() + t.slice(1),
@@ -213,7 +214,8 @@ async function saveRecipe() {
             name.value.trim(),
             type.value,
             notes.value || null,
-            currentImageUrl.value
+            currentImageUrl.value,
+            notSuggested.value
         );
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
@@ -333,6 +335,11 @@ async function handleSave() {
                 <span class="macro">C: {{ Math.round(totals.carbs_g * 10) / 10 }}g</span>
                 <span class="macro">F: {{ Math.round(totals.fat_g * 10) / 10 }}g</span>
             </div>
+        </div>
+
+        <div class="field-inline">
+            <Checkbox v-model="notSuggested" inputId="not-suggested" :binary="true" />
+            <label for="not-suggested">Exclude from meal slot suggestions</label>
         </div>
 
         <Button
@@ -514,6 +521,18 @@ async function handleSave() {
 
     .field {
         min-width: 0;
+    }
+}
+
+.field-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    label {
+        font-size: 0.85em;
+        color: #555;
+        cursor: pointer;
     }
 }
 

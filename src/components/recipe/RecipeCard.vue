@@ -47,6 +47,7 @@ const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
                     <span>{{ Math.round(totals.fat_g * 10) / 10 }}g</span>
                 </span>
             </div>
+            <i v-if="recipe.not_suggested" class="pi pi-eye-slash not-suggested-icon" />
         </div>
     </div>
 </template>
@@ -145,5 +146,13 @@ const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
     color: #555;
     border-right: 1px solid #ededed;
     padding-right: 8px;
+}
+
+.not-suggested-icon {
+    font-size: 1.1em;
+    color: #aaa;
+    position: relative;
+    z-index: 1;
+    margin-right: 4px;
 }
 </style>
