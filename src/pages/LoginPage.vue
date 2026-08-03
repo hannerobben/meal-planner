@@ -28,7 +28,7 @@ async function signInHandler() {
         <div>
             <i class="pi pi-apple" style="font-size: 4rem; color: #2E7D32" />
         </div>
-        <h1 style="margin: 0">Meal Planner</h1>
+        <h1 style="margin: 0">Mealio</h1>
         <div class="login-form">
             <InputText v-model="email" placeholder="Email" type="email" />
             <InputText type="password" v-model="password" placeholder="Password" />
