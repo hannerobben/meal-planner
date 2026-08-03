@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useShoppingStore } from '../stores/shopping.store.ts';
 import ShoppingCategory from '../components/shopping/ShoppingCategory.vue';
@@ -7,7 +7,7 @@ import type { IngredientCategory } from '../model/ingredient.contract.ts';
 import dayjs from 'dayjs';
 
 const shoppingStore = useShoppingStore();
-const { categorizedList, loading, from, to } = storeToRefs(shoppingStore);
+const { categorizedList, loading, from, to, multiplier } = storeToRefs(shoppingStore);
 
 onMounted(() => shoppingStore.fetchForRange());
 
@@ -31,11 +31,18 @@ const toDate = computed<Date | null>({
     }
 });
 
-const multiplier = ref<1 | 2>(2);
 const multiplierOptions = [
     { label: 'x1', value: 1 },
     { label: 'x2', value: 2 }
 ];
+
+const selectedMultiplier = computed<1 | 2>({
+    get: () => multiplier.value,
+    set: (val: 1 | 2) => {
+        multiplier.value = val;
+        shoppingStore.fetchForRange();
+    }
+});
 
 function toggle(name: string, unit: string, category: IngredientCategory) {
     shoppingStore.toggleChecked(name, unit, category);
@@ -57,7 +64,7 @@ function toggle(name: string, unit: string, category: IngredientCategory) {
 
         <div class="multiplier-row">
             <label>Portions</label>
-            <SelectButton v-model="multiplier" :options="multiplierOptions" optionLabel="label" optionValue="value" :allowEmpty="false" />
+            <SelectButton v-model="selectedMultiplier" :options="multiplierOptions" optionLabel="label" optionValue="value" :allowEmpty="false" />
         </div>
 
         <div v-if="loading" class="loading">Loading…</div>

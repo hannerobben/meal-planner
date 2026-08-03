@@ -338,10 +338,12 @@ async function handleSignOut() {
 
 .save-btn {
     width: fit-content;
+    align-self: flex-end;
 }
 
 .signout {
     margin-top: 8px;
     width: fit-content;
+    align-self: flex-end;
 }
 </style>

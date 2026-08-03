@@ -345,8 +345,9 @@ function macrosForDate(date: string) {
 .macro-tabs {
     display: flex;
     gap: 4px;
-    padding: 0 12px;
+    margin: 0 12px;
     margin-bottom: -8px;
+    border-bottom: 1px solid white;
 }
 
 .macro-tab {

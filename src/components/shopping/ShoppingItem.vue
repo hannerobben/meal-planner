@@ -10,7 +10,7 @@ defineEmits<{ toggle: [] }>();
         <Checkbox :modelValue="item.checked" @update:modelValue="$emit('toggle')" @click.stop binary />
         <div class="item-info">
             <span class="item-name">{{ item.name }}</span>
-            <span class="item-qty">{{ item.quantity * multiplier }} {{ item.unit }}</span>
+            <span class="item-qty">{{ item.quantity * multiplier }}{{ item.unit !== 'item' ? ' ' + item.unit : '' }}</span>
         </div>
     </div>
 </template>

@@ -35,13 +35,13 @@ onMounted(() => {
     flex-direction: column;
     box-sizing: border-box;
     overflow-y: auto;
+    background-color: whitesmoke;
 
     .page-content {
         height: 100%;
         min-height: 0;
         display: flex;
         flex-direction: column;
-        background-color: whitesmoke;
     }
 }
 </style>

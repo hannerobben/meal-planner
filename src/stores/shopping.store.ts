@@ -28,10 +28,29 @@ function toIso(d: dayjs.Dayjs) {
     return d.format('YYYY-MM-DD');
 }
 
+function checkedKey(from: string, to: string, multiplier: 1 | 2) {
+    return `shopping:checked:${from}:${to}:${multiplier}`;
+}
+
+function saveChecked(from: string, to: string, multiplier: 1 | 2, items: AggregatedItem[]) {
+    const checked = items.filter((i) => i.checked).map((i) => `${i.name}|${i.unit}|${i.category}`);
+    localStorage.setItem(checkedKey(from, to, multiplier), JSON.stringify(checked));
+}
+
+function restoreChecked(from: string, to: string, multiplier: 1 | 2, items: AggregatedItem[]) {
+    const raw = localStorage.getItem(checkedKey(from, to, multiplier));
+    if (!raw) return;
+    const checked = new Set<string>(JSON.parse(raw));
+    for (const item of items) {
+        if (checked.has(`${item.name}|${item.unit}|${item.category}`)) item.checked = true;
+    }
+}
+
 export const useShoppingStore = defineStore('shopping-store', {
     state: (): {
         from: string;
         to: string;
+        multiplier: 1 | 2;
         items: AggregatedItem[];
         loading: boolean;
     } => {
@@ -39,6 +58,7 @@ export const useShoppingStore = defineStore('shopping-store', {
         return {
             from: ws,
             to: toIso(dayjs(ws).add(6, 'day')),
+            multiplier: 2,
             items: [],
             loading: false
         };
@@ -88,6 +108,7 @@ export const useShoppingStore = defineStore('shopping-store', {
                     }
                 }
                 this.items = Array.from(map.values());
+                restoreChecked(this.from, this.to, this.multiplier, this.items);
             } finally {
                 this.loading = false;
             }
@@ -96,7 +117,10 @@ export const useShoppingStore = defineStore('shopping-store', {
             const item = this.items.find(
                 (i) => i.name === name && i.unit === unit && i.category === category
             );
-            if (item) item.checked = !item.checked;
+            if (item) {
+                item.checked = !item.checked;
+                saveChecked(this.from, this.to, this.multiplier, this.items);
+            }
         },
         setRange(from: string, to: string) {
             this.from = from;
