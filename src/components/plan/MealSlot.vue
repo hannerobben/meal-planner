@@ -18,7 +18,9 @@ defineEmits<{ click: [] }>();
                 : {}
         "
         @click="$emit('click')"
-    ></div>
+    >
+        <span v-if="entry.addon_ingredients?.length" class="addon-dot">+</span>
+    </div>
 </template>
 
 <style scoped>
@@ -29,5 +31,23 @@ defineEmits<{ click: [] }>();
     background: #f1f8e9;
     cursor: pointer;
     min-height: 36px;
+    position: relative;
+}
+
+.addon-dot {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #9bbd9d;
+    color: white;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>

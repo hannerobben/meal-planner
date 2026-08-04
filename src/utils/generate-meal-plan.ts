@@ -75,7 +75,7 @@ function buildDays(startDate: string, endDate: string): string[] {
  *
  * Rules:
  *  - Dinner: 2 recipes, one repeated ceil(n/2) times and one floor(n/2) times,
- *    interleaved across the week.
+ *    arranged in a sandwich block pattern (A…A-B…B-A…A) for consecutive days.
  *  - Lunch: same recipe two days in a row, new recipe each pair.
  *  - Breakfast: one recipe per day, rotating through top-scoring candidates.
  *  - Snacks: 3 different snacks per day, rotating start per day for variety.
@@ -201,12 +201,13 @@ function selectDinnerPair(
         }
     }
 
-    // Distribute A (countA days) and B (countB days) evenly via proportional scheduling
-    const byDay: string[] = [];
-    for (let d = 0; d < n; d++) {
-        const expectedA = Math.round(((d + 1) * countA) / n);
-        const placedA = byDay.filter((id) => id === bestA.id).length;
-        byDay.push(expectedA > placedA ? bestA.id : bestB.id);
-    }
-    return byDay;
+    // Sandwich distribution: first half of A, then all of B, then remaining A.
+    // This produces consecutive blocks (e.g. AA-BBB-AA for 7 days) rather than alternation.
+    const firstA = Math.ceil(countA / 2);
+    const lastA = countA - firstA;
+    return [
+        ...Array(firstA).fill(bestA.id),
+        ...Array(countB).fill(bestB.id),
+        ...Array(lastA).fill(bestA.id)
+    ];
 }

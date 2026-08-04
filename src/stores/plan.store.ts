@@ -41,11 +41,12 @@ export const usePlanStore = defineStore('plan-store', {
             this.weekStart = toIso(dayjs(this.weekStart).add(7, 'day'));
             this.fetchWeek();
         },
-        async insertEntry(date: string, mealType: MealType, slotIndex: number, recipeId: string | null, freeText: string | null, userId: string | null = null) {
+        async insertEntry(date: string, mealType: MealType, slotIndex: number, recipeId: string | null, freeText: string | null, userId: string | null = null): Promise<MealPlanEntryContract | undefined> {
             const householdId = useAuthStore().householdId;
             if (!householdId) return;
             const entry = await PlanApi.insert(householdId, date, mealType, slotIndex, recipeId, freeText, userId);
             this.entries.push(entry);
+            return entry;
         },
         async updateEntry(id: string, recipeId: string | null, freeText: string | null, userId: string | null = null) {
             await PlanApi.update(id, recipeId, freeText, userId);

@@ -1,7 +1,7 @@
 import { supabase } from './supabase.ts';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
 
-const SELECT = '*, recipe:recipes(*, ingredients:recipe_ingredients(*, ingredient:ingredients(*)))';
+const SELECT = '*, recipe:recipes(*, ingredients:recipe_ingredients(*, ingredient:ingredients(*))), addon_ingredients:meal_plan_entry_addon_ingredients(*, ingredient:ingredients(*))';
 
 export class PlanApi {
     public static async getForRange(
@@ -56,6 +56,22 @@ export class PlanApi {
 
     public static async remove(id: string): Promise<void> {
         const { error } = await supabase.from('meal_plan_entries').delete().eq('id', id);
+        if (error) throw error;
+    }
+
+    public static async replaceAddonIngredients(
+        entryId: string,
+        lines: { ingredientId: string; quantity: number }[]
+    ): Promise<void> {
+        const { error: delError } = await supabase
+            .from('meal_plan_entry_addon_ingredients')
+            .delete()
+            .eq('meal_plan_entry_id', entryId);
+        if (delError) throw delError;
+        if (!lines.length) return;
+        const { error } = await supabase
+            .from('meal_plan_entry_addon_ingredients')
+            .insert(lines.map((l) => ({ meal_plan_entry_id: entryId, ingredient_id: l.ingredientId, quantity: l.quantity })));
         if (error) throw error;
     }
 }

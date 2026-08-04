@@ -1,4 +1,5 @@
 import type { RecipeContract } from './recipe.contract.ts';
+import type { MealPlanEntryAddonIngredientContract } from './meal-plan-entry-addon-ingredient.contract.ts';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -14,4 +15,5 @@ export interface MealPlanEntryContract {
     free_text: string | null;
     user_id: string | null;
     recipe?: RecipeContract;
+    addon_ingredients?: MealPlanEntryAddonIngredientContract[];
 }

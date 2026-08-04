@@ -65,7 +65,11 @@ const slots = computed(() => {
         </div>
         <div class="slots">
             <template v-for="(slot, i) in slots" :key="i">
-                <div v-if="slot.perUser" class="slot-row" @click="emit('slotClick', date, slot.entries)">
+                <div
+                    v-if="slot.perUser"
+                    class="slot-row"
+                    @click="emit('slotClick', date, slot.entries)"
+                >
                     <div
                         v-for="(entry, pi) in slot.perUser"
                         :key="pi"
@@ -80,7 +84,9 @@ const slots = computed(() => {
                                   }
                                 : {}
                         "
-                    />
+                    >
+                        <span v-if="entry?.addon_ingredients?.length" class="addon-dot">+</span>
+                    </div>
                 </div>
                 <MealSlot
                     v-else-if="slot.entries.length === 1"
@@ -144,8 +150,25 @@ const slots = computed(() => {
 
 .slot-part {
     flex: 1;
-    min-height: 36px;
     cursor: pointer;
+    position: relative;
+}
+
+.addon-dot {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #9bbd9d;
+    color: white;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .slot-part-divider {
@@ -153,13 +176,7 @@ const slots = computed(() => {
 }
 
 .slot-part-empty {
-    background: repeating-linear-gradient(
-        -45deg,
-        white,
-        white 4px,
-        #e0e0e0 4px,
-        #e0e0e0 8px
-    );
+    background: repeating-linear-gradient(-45deg, white, white 4px, #e0e0e0 4px, #e0e0e0 8px);
 }
 
 .empty-slot {
