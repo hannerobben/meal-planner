@@ -5,6 +5,8 @@ import type { RecipeContract } from '../../model/recipe.contract.ts';
 import type { AppUserContract } from '../../model/user.contract.ts';
 import type { IngredientContract } from '../../model/ingredient.contract.ts';
 import { MEAL_TYPE_COLORS } from '../../model/type-colors.ts';
+import MealSlotEntryForm from './MealSlotEntryForm.vue';
+import type { DraftAddonLine, DraftAddonRecipeLine } from './MealSlotEntryForm.vue';
 
 const props = defineProps<{
     visible: boolean;
@@ -22,6 +24,7 @@ export type UserEntry = {
     recipeId: string | null;
     freeText: string | null;
     addonIngredients: AddonIngredientLine[];
+    addonRecipes: string[];
 };
 
 const emit = defineEmits<{
@@ -30,9 +33,11 @@ const emit = defineEmits<{
     remove: [];
 }>();
 
-type DraftAddonLine = { ingredientId: string | null; quantity: number };
 const addonLines = ref<DraftAddonLine[]>([]);
 const perUserAddonLines = ref<Record<string, DraftAddonLine[]>>({});
+
+const addonRecipeLines = ref<DraftAddonRecipeLine[]>([]);
+const perUserAddonRecipeLines = ref<Record<string, DraftAddonRecipeLine[]>>({});
 
 const selectedRecipeId = ref<string | null>(null);
 const originalRecipeId = ref<string | null>(null);
@@ -86,12 +91,20 @@ watch(
                 ];
             })
         );
+        addonRecipeLines.value = (props.slotEntries[0]?.addon_recipes ?? []).map((ar) => ({
+            recipeId: ar.recipe_id
+        }));
+        perUserAddonRecipeLines.value = Object.fromEntries(
+            props.householdUsers.map((u) => {
+                const entry = props.slotEntries.find((e) => e.user_id === u.id);
+                return [u.id, (entry?.addon_recipes ?? []).map((ar) => ({ recipeId: ar.recipe_id }))];
+            })
+        );
     }
 );
 
 watch(definePerUser, (perUser) => {
     if (!perUser) return;
-    // When toggling on from a shared entry, seed each user with the shared values
     if (selectedRecipeId.value) {
         for (const u of props.householdUsers) {
             perUserRecipeIds.value[u.id] = selectedRecipeId.value;
@@ -102,6 +115,11 @@ watch(definePerUser, (perUser) => {
             perUserAddonLines.value[u.id] = addonLines.value.map((l) => ({ ...l }));
         }
     }
+    if (addonRecipeLines.value.length) {
+        for (const u of props.householdUsers) {
+            perUserAddonRecipeLines.value[u.id] = addonRecipeLines.value.map((l) => ({ ...l }));
+        }
+    }
 });
 
 const recipeOptions = computed(() => {
@@ -109,6 +127,7 @@ const recipeOptions = computed(() => {
     return props.recipes
         .filter(
             (r) =>
+                !r.is_addon &&
                 r.type.includes(displayMealType.value) &&
                 (!r.not_suggested || existingIds.has(r.id))
         )
@@ -119,25 +138,14 @@ const ingredientOptions = computed(() =>
     props.ingredients.map((i) => ({ label: i.name, value: i.id }))
 );
 
-function ingredientUnit(ingredientId: string | null): string {
-    if (!ingredientId) return '';
-    return props.ingredients.find((i) => i.id === ingredientId)?.base_unit ?? '';
-}
+const addonRecipeOptions = computed(() =>
+    props.recipes
+        .filter((r) => r.is_addon && r.type.includes(displayMealType.value))
+        .map((r) => ({ label: r.name, value: r.id }))
+);
 
-function addAddonLine(userId?: string) {
-    if (userId) {
-        (perUserAddonLines.value[userId] ??= []).push({ ingredientId: null, quantity: 0 });
-    } else {
-        addonLines.value.push({ ingredientId: null, quantity: 0 });
-    }
-}
-
-function removeAddonLine(index: number, userId?: string) {
-    if (userId) {
-        perUserAddonLines.value[userId]?.splice(index, 1);
-    } else {
-        addonLines.value.splice(index, 1);
-    }
+function toAddonRecipes(lines: DraftAddonRecipeLine[]): string[] {
+    return lines.filter((l) => l.recipeId !== null).map((l) => l.recipeId!);
 }
 
 function toAddonIngredients(lines: DraftAddonLine[]): AddonIngredientLine[] {
@@ -153,8 +161,7 @@ const canSave = computed(() => {
     return !!selectedRecipeId.value;
 });
 
-function openRecipeViewer(recipeId: string | null) {
-    if (!recipeId) return;
+function openRecipeViewer(recipeId: string) {
     viewingRecipeId.value = recipeId;
     portions.value = 1;
     emit('update:visible', false);
@@ -172,7 +179,8 @@ function handleSave() {
                 userId: u.id,
                 recipeId: perUserRecipeIds.value[u.id] ?? null,
                 freeText: null,
-                addonIngredients: toAddonIngredients(perUserAddonLines.value[u.id] ?? [])
+                addonIngredients: toAddonIngredients(perUserAddonLines.value[u.id] ?? []),
+                addonRecipes: toAddonRecipes(perUserAddonRecipeLines.value[u.id] ?? []),
             }));
     } else {
         userEntries = [
@@ -180,7 +188,8 @@ function handleSave() {
                 userId: null,
                 recipeId: selectedRecipeId.value,
                 freeText: null,
-                addonIngredients: toAddonIngredients(addonLines.value)
+                addonIngredients: toAddonIngredients(addonLines.value),
+                addonRecipes: toAddonRecipes(addonRecipeLines.value),
             }
         ];
     }
@@ -221,116 +230,34 @@ const title = computed(() =>
 
             <!-- Single mode -->
             <template v-if="!definePerUser">
-                <div class="recipe-row">
-                    <Select
-                        v-model="selectedRecipeId"
-                        :options="recipeOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        placeholder="Choose a recipe…"
-                        filter
-                        style="flex: 1; min-width: 0"
-                    />
-                    <Button
-                        v-if="selectedRecipeId && selectedRecipeId === originalRecipeId"
-                        icon="pi pi-book"
-                        severity="secondary"
-                        @click="openRecipeViewer(selectedRecipeId)"
-                    />
-                </div>
-                <div class="addon-section">
-                    <div class="addon-title">Add-ons</div>
-                    <div v-for="(line, i) in addonLines" :key="i" class="addon-row">
-                        <Select
-                            v-model="line.ingredientId"
-                            :options="ingredientOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="Ingredient…"
-                            filter
-                            class="addon-ingredient-select"
-                        />
-                        <InputNumber
-                            v-model="line.quantity"
-                            :min="0"
-                            :maxFractionDigits="1"
-                            placeholder="0"
-                            class="addon-qty"
-                        />
-                        <span class="addon-unit">{{ ingredientUnit(line.ingredientId) }}</span>
-                        <Button
-                            icon="pi pi-times"
-                            text
-                            severity="secondary"
-                            size="small"
-                            @click="removeAddonLine(i)"
-                        />
-                    </div>
-                    <button class="add-ingredient-link" @click="addAddonLine()">
-                        + Add ingredient
-                    </button>
-                </div>
+                <MealSlotEntryForm
+                    v-model:recipeId="selectedRecipeId"
+                    v-model:addonLines="addonLines"
+                    v-model:addonRecipeLines="addonRecipeLines"
+                    :originalRecipeId="originalRecipeId"
+                    :recipeOptions="recipeOptions"
+                    :addonRecipeOptions="addonRecipeOptions"
+                    :ingredientOptions="ingredientOptions"
+                    :ingredients="ingredients"
+                    @openRecipeViewer="openRecipeViewer"
+                />
             </template>
 
             <!-- Per-user mode -->
             <template v-else>
                 <div v-for="user in householdUsers" :key="user.id" class="user-form">
                     <div class="user-form-name">{{ user.display_name }}</div>
-                    <div class="recipe-row">
-                        <Select
-                            v-model="perUserRecipeIds[user.id]"
-                            :options="recipeOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="Choose a recipe…"
-                            filter
-                            style="flex: 1; min-width: 0"
-                        />
-                        <Button
-                            v-if="
-                                perUserRecipeIds[user.id] &&
-                                perUserRecipeIds[user.id] === originalPerUserRecipeIds[user.id]
-                            "
-                            icon="pi pi-book"
-                            severity="secondary"
-                            @click="openRecipeViewer(perUserRecipeIds[user.id])"
-                        />
-                    </div>
-                    <div class="addon-section">
-                        <div class="addon-title">Add-ons</div>
-                        <div
-                            v-for="(line, i) in perUserAddonLines[user.id] ?? []"
-                            :key="i"
-                            class="addon-row"
-                        >
-                            <Select
-                                v-model="line.ingredientId"
-                                :options="ingredientOptions"
-                                optionLabel="label"
-                                optionValue="value"
-                                placeholder="Ingredient…"
-                                filter
-                                class="addon-ingredient-select"
-                            />
-                            <InputNumber
-                                v-model="line.quantity"
-                                :min="0"
-                                placeholder="0"
-                                class="addon-qty"
-                            />
-                            <span class="addon-unit">{{ ingredientUnit(line.ingredientId) }}</span>
-                            <Button
-                                icon="pi pi-times"
-                                text
-                                severity="secondary"
-                                size="small"
-                                @click="removeAddonLine(i, user.id)"
-                            />
-                        </div>
-                        <button class="add-ingredient-link" @click="addAddonLine(user.id)">
-                            + Add ingredient
-                        </button>
-                    </div>
+                    <MealSlotEntryForm
+                        v-model:recipeId="perUserRecipeIds[user.id]"
+                        v-model:addonLines="perUserAddonLines[user.id]"
+                        v-model:addonRecipeLines="perUserAddonRecipeLines[user.id]"
+                        :originalRecipeId="originalPerUserRecipeIds[user.id]"
+                        :recipeOptions="recipeOptions"
+                        :addonRecipeOptions="addonRecipeOptions"
+                        :ingredientOptions="ingredientOptions"
+                        :ingredients="ingredients"
+                        @openRecipeViewer="openRecipeViewer"
+                    />
                 </div>
             </template>
         </div>
@@ -450,71 +377,6 @@ const title = computed(() =>
     align-items: center;
     gap: 8px;
     width: 100%;
-}
-
-.dialog-body :deep(.p-select-label) {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-
-.recipe-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.addon-section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px;
-    border: 1px solid lightgray;
-    border-radius: 8px;
-}
-
-.addon-title {
-    font-size: 0.75em;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.addon-row {
-    display: grid;
-    grid-template-columns: 1fr 68px 28px 28px;
-    gap: 6px;
-    align-items: center;
-}
-
-.addon-ingredient-select {
-    min-width: 0;
-}
-
-.addon-qty :deep(.p-inputnumber),
-.addon-qty :deep(.p-inputnumber-input) {
-    width: 100%;
-    min-width: 0;
-}
-
-.addon-unit {
-    font-size: 0.8em;
-    color: #888;
-    white-space: nowrap;
-}
-
-.add-ingredient-link {
-    background: none;
-    border: none;
-    padding: 6px 0;
-    color: #2e7d32;
-    font-size: 0.85em;
-    cursor: pointer;
-    align-self: flex-start;
-
-    &:hover {
-        text-decoration: underline;
-    }
 }
 
 .recipe-viewer {

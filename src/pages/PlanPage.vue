@@ -12,7 +12,7 @@ import WeekGrid from '../components/plan/WeekGrid.vue';
 import MealSlotDialog from '../components/plan/MealSlotDialog.vue';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
 import type { AppUserContract } from '../model/user.contract.ts';
-import type { UserEntry, AddonIngredientLine } from '../components/plan/MealSlotDialog.vue';
+import type { UserEntry } from '../components/plan/MealSlotDialog.vue';
 import {
     calculateBMR,
     calculateTDEE,
@@ -120,7 +120,7 @@ function openEntry(date: string, entries: MealPlanEntryContract[]) {
 async function handleSave(mealType: MealType | null, userEntries: UserEntry[]) {
     try {
         const existing = dialogSlotEntries.value;
-        const entryAddonMap = new Map<string, AddonIngredientLine[]>();
+        const entryAddonMap = new Map<string, UserEntry>();
 
         if (mealType) {
             const inserted = await Promise.all(
@@ -135,7 +135,7 @@ async function handleSave(mealType: MealType | null, userEntries: UserEntry[]) {
                     )
                 )
             );
-            inserted.forEach((e, i) => { if (e) entryAddonMap.set(e.id, userEntries[i].addonIngredients); });
+            inserted.forEach((e, i) => { if (e) entryAddonMap.set(e.id, userEntries[i]); });
         } else if (existing.length > 0) {
             const byUser = new Map(existing.map((e) => [e.user_id, e]));
             const slotMealType = existing[0].meal_type;
@@ -145,7 +145,7 @@ async function handleSave(mealType: MealType | null, userEntries: UserEntry[]) {
                     const match = byUser.get(ue.userId);
                     byUser.delete(ue.userId);
                     if (match) {
-                        entryAddonMap.set(match.id, ue.addonIngredients);
+                        entryAddonMap.set(match.id, ue);
                         return planStore.updateEntry(match.id, ue.recipeId, ue.freeText, ue.userId);
                     } else {
                         const e = await planStore.insertEntry(
@@ -156,14 +156,21 @@ async function handleSave(mealType: MealType | null, userEntries: UserEntry[]) {
                             ue.freeText,
                             ue.userId
                         );
-                        if (e) entryAddonMap.set(e.id, ue.addonIngredients);
+                        if (e) entryAddonMap.set(e.id, ue);
                     }
                 })
             );
             await Promise.all([...byUser.values()].map((e) => planStore.removeEntry(e.id)));
         }
 
-        await Promise.all([...entryAddonMap.entries()].map(([id, lines]) => PlanApi.replaceAddonIngredients(id, lines)));
+        await Promise.all(
+            [...entryAddonMap.entries()].map(([id, ue]) =>
+                Promise.all([
+                    PlanApi.replaceAddonIngredients(id, ue.addonIngredients),
+                    PlanApi.replaceAddonRecipes(id, ue.addonRecipes),
+                ])
+            )
+        );
         await planStore.fetchWeek();
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
@@ -249,6 +256,16 @@ function macrosForDate(date: string) {
                 acc.protein += f * ai.ingredient.protein_g_per_100;
                 acc.carbs += f * ai.ingredient.carbs_g_per_100;
                 acc.fat += f * ai.ingredient.fat_g_per_100;
+            }
+            for (const ar of e.addon_recipes ?? []) {
+                for (const ri of ar.recipe?.ingredients ?? []) {
+                    if (!ri.ingredient) continue;
+                    const f = ingredientFactor(ri.quantity, ri.ingredient);
+                    acc.kcal += f * ri.ingredient.calories_per_100;
+                    acc.protein += f * ri.ingredient.protein_g_per_100;
+                    acc.carbs += f * ri.ingredient.carbs_g_per_100;
+                    acc.fat += f * ri.ingredient.fat_g_per_100;
+                }
             }
             return acc;
         },

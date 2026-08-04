@@ -31,6 +31,7 @@ const name = ref(props.recipe?.name ?? '');
 const type = ref<MealType[]>(props.recipe?.type ?? ['dinner']);
 const notes = ref(props.recipe?.notes ?? '');
 const notSuggested = ref(props.recipe?.not_suggested ?? false);
+const isAddon = ref(props.recipe?.is_addon ?? false);
 
 const typeOptions = MEAL_TYPES.map((t) => ({
     label: t.charAt(0).toUpperCase() + t.slice(1),
@@ -215,7 +216,8 @@ async function saveRecipe() {
             type.value,
             notes.value || null,
             currentImageUrl.value,
-            notSuggested.value
+            notSuggested.value,
+            isAddon.value
         );
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Save failed', detail: String(e), life: 4000 });
@@ -340,6 +342,11 @@ async function handleSave() {
         <div class="field-inline">
             <Checkbox v-model="notSuggested" inputId="not-suggested" :binary="true" />
             <label for="not-suggested">Exclude from meal slot suggestions</label>
+        </div>
+
+        <div class="field-inline">
+            <Checkbox v-model="isAddon" inputId="is-addon" :binary="true" />
+            <label for="is-addon">Mark as addon</label>
         </div>
 
         <Button

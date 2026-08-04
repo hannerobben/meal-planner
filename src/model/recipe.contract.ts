@@ -9,6 +9,7 @@ export interface RecipeContract {
     notes: string | null;
     image_url: string | null;
     not_suggested: boolean;
+    is_addon: boolean;
     created_at: string;
     ingredients?: RecipeIngredientContract[];
 }

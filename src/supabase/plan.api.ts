@@ -1,7 +1,8 @@
 import { supabase } from './supabase.ts';
 import type { MealPlanEntryContract, MealType } from '../model/meal-plan-entry.contract.ts';
 
-const SELECT = '*, recipe:recipes(*, ingredients:recipe_ingredients(*, ingredient:ingredients(*))), addon_ingredients:meal_plan_entry_addon_ingredients(*, ingredient:ingredients(*))';
+const RECIPE_FRAGMENT = 'recipes(*, ingredients:recipe_ingredients(*, ingredient:ingredients(*)))';
+const SELECT = `*, recipe:${RECIPE_FRAGMENT}, addon_ingredients:meal_plan_entry_addon_ingredients(*, ingredient:ingredients(*)), addon_recipes:meal_plan_entry_addon_recipes(*, recipe:${RECIPE_FRAGMENT})`;
 
 export class PlanApi {
     public static async getForRange(
@@ -56,6 +57,19 @@ export class PlanApi {
 
     public static async remove(id: string): Promise<void> {
         const { error } = await supabase.from('meal_plan_entries').delete().eq('id', id);
+        if (error) throw error;
+    }
+
+    public static async replaceAddonRecipes(entryId: string, recipeIds: string[]): Promise<void> {
+        const { error: delError } = await supabase
+            .from('meal_plan_entry_addon_recipes')
+            .delete()
+            .eq('meal_plan_entry_id', entryId);
+        if (delError) throw delError;
+        if (!recipeIds.length) return;
+        const { error } = await supabase
+            .from('meal_plan_entry_addon_recipes')
+            .insert(recipeIds.map((id) => ({ meal_plan_entry_id: entryId, recipe_id: id })));
         if (error) throw error;
     }
 

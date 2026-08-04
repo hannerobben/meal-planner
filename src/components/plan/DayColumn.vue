@@ -85,7 +85,7 @@ const slots = computed(() => {
                                 : {}
                         "
                     >
-                        <span v-if="entry?.addon_ingredients?.length" class="addon-dot">+</span>
+                        <span v-if="entry?.addon_ingredients?.length || entry?.addon_recipes?.length" class="addon-dot">+</span>
                     </div>
                 </div>
                 <MealSlot
