@@ -51,8 +51,8 @@ function toggle(name: string, unit: string, category: IngredientCategory) {
 
 <template>
     <div class="shopping-page">
-        <div class="shopping-header">
-            <h2 class="title" style="margin-bottom: 0">Shopping List</h2>
+        <div class="page-header">
+            <div class="title" style="margin-bottom: 0">Shopping List</div>
         </div>
 
         <div class="date-range">
@@ -64,7 +64,13 @@ function toggle(name: string, unit: string, category: IngredientCategory) {
 
         <div class="multiplier-row">
             <label>Portions</label>
-            <SelectButton v-model="selectedMultiplier" :options="multiplierOptions" optionLabel="label" optionValue="value" :allowEmpty="false" />
+            <SelectButton
+                v-model="selectedMultiplier"
+                :options="multiplierOptions"
+                optionLabel="label"
+                optionValue="value"
+                :allowEmpty="false"
+            />
         </div>
 
         <div v-if="loading" class="loading">Loading…</div>
@@ -85,20 +91,10 @@ function toggle(name: string, unit: string, category: IngredientCategory) {
 
 <style scoped>
 .shopping-page {
-    padding: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-}
-
-.shopping-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-        margin: 0;
-    }
 }
 
 .date-range {

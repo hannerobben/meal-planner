@@ -476,7 +476,6 @@ function macrosForDate(date: string) {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
     height: 100%;
     box-sizing: border-box;
 }
@@ -484,6 +483,7 @@ function macrosForDate(date: string) {
 .title-row {
     display: flex;
     align-items: center;
+    margin-bottom: 8px;
 }
 
 .title-side {
@@ -507,9 +507,6 @@ function macrosForDate(date: string) {
 .plan-header {
     display: flex;
     align-items: center;
-    background: #ededed;
-    border-radius: 8px;
-    margin-bottom: -7px;
 }
 
 .week-label {
@@ -522,8 +519,7 @@ function macrosForDate(date: string) {
 .macro-tabs {
     display: flex;
     gap: 4px;
-    margin: 0 12px;
-    margin-bottom: -2px;
+    margin: 6px 12px;
     border-bottom: 1px solid white;
 }
 
@@ -562,7 +558,7 @@ function macrosForDate(date: string) {
     gap: 4px;
     background: white;
     border-radius: 8px;
-    padding: 6px 4px;
+    padding: 4px 4px;
     min-height: 20px;
 
     span {
@@ -576,7 +572,7 @@ function macrosForDate(date: string) {
         flex: 1;
         justify-content: center;
         border-radius: 5px;
-        padding: 6px 2px;
+        padding: 4px 2px;
 
         em {
             font-style: normal;

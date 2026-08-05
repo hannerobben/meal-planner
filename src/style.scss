@@ -21,7 +21,7 @@
 .p-dialog-content { height: 100% }
 
 .p-tabmenu-item-link {
-    padding: 8px 12px 4px 12px !important;
+    padding: 10px !important;
 }
 
 .p-toast {
@@ -115,5 +115,19 @@ body {
 
     &.items-center {
         align-items: center;
+    }
+}
+
+.page-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .title {
+        margin: 0;
+        font-size: 0.85em;
+        font-weight: 700;
+        text-align: center;
+        letter-spacing: 0.08em;
     }
 }

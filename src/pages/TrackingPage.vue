@@ -371,7 +371,6 @@ function macrosForDate(date: string) {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
     height: 100%;
     box-sizing: border-box;
 }
@@ -382,14 +381,13 @@ function macrosForDate(date: string) {
     font-weight: 700;
     text-align: center;
     letter-spacing: 0.08em;
+    margin-bottom: 8px;
 }
 
 .plan-header {
     display: flex;
     align-items: center;
-    background: #ededed;
     border-radius: 8px;
-    margin-bottom: -7px;
 }
 
 .week-label {
@@ -409,6 +407,7 @@ function macrosForDate(date: string) {
     display: flex;
     gap: 10px;
     padding: 0 12px;
+    margin-top: 12px;
 }
 
 .macro-cell {

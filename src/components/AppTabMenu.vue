@@ -59,6 +59,8 @@ a {
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
+    border: none;
+    min-height: unset;
 }
 
 a.tab-active {

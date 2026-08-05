@@ -109,12 +109,27 @@ async function deleteIngredient() {
         await store.remove(editingIngredient.value.id);
         showDeleteConfirm.value = false;
         showEditDialog.value = false;
-        toast.add({ severity: 'success', summary: 'Deleted', detail: `"${name}" was deleted`, life: 3000 });
+        toast.add({
+            severity: 'success',
+            summary: 'Deleted',
+            detail: `"${name}" was deleted`,
+            life: 3000
+        });
     } catch (e: any) {
         if (e?.code === '23503') {
-            toast.add({ severity: 'warn', summary: 'Cannot delete', detail: 'Ingredient is used in one or more recipes', life: 4000 });
+            toast.add({
+                severity: 'warn',
+                summary: 'Cannot delete',
+                detail: 'Ingredient is used in one or more recipes',
+                life: 4000
+            });
         } else {
-            toast.add({ severity: 'error', summary: 'Delete failed', detail: String(e), life: 4000 });
+            toast.add({
+                severity: 'error',
+                summary: 'Delete failed',
+                detail: String(e),
+                life: 4000
+            });
         }
     }
 }
@@ -166,9 +181,11 @@ async function saveNew() {
 <template>
     <div class="ingredients-page">
         <div class="page-header">
-            <h2>Ingredients</h2>
-            <Button icon="pi pi-plus" label="New" @click="openNewDialog" />
+            <div class="title">Ingredients</div>
         </div>
+
+        <Button icon="pi pi-plus" class="new-btn" @click="openNewDialog" />
+
         <div class="sort-bar">
             <IconField>
                 <InputIcon class="pi pi-search" />
@@ -391,13 +408,7 @@ async function saveNew() {
 }
 
 .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-        margin: 0;
-    }
+    margin-bottom: 6px;
 }
 
 .sort-bar {
@@ -510,5 +521,11 @@ async function saveNew() {
     display: flex;
     width: 100%;
     min-width: 0;
+}
+
+.new-btn {
+    position: absolute !important;
+    top: 8px;
+    right: 8px;
 }
 </style>

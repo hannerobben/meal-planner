@@ -92,7 +92,9 @@ async function handleSignOut() {
 
 <template>
     <div class="profile-page">
-        <h2 class="title">Profile</h2>
+        <div class="page-header">
+            <div class="title">Profile</div>
+        </div>
 
         <div class="field">
             <label>Email</label>
@@ -106,7 +108,9 @@ async function handleSignOut() {
                 <div class="result-card result-card--tdee">
                     <span class="result-label">Daily calorie target</span>
                     <span class="result-value">{{ macros.target_kcal }} <small>kcal</small></span>
-                    <span v-if="macros.target_kcal !== macros.tdee" class="result-kcal">TDEE: {{ macros.tdee }} kcal</span>
+                    <span v-if="macros.target_kcal !== macros.tdee" class="result-kcal"
+                        >TDEE: {{ macros.tdee }} kcal</span
+                    >
                 </div>
                 <div class="macros-row">
                     <div class="result-card">
@@ -229,7 +233,7 @@ async function handleSignOut() {
 
 <style scoped>
 .profile-page {
-    padding: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;

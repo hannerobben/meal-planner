@@ -60,14 +60,15 @@ onMounted(() => recipeStore.fetchAll());
 
 <template>
     <div class="recipes-page">
-        <div class="header">
-            <h2>Recipes</h2>
-            <Button
-                icon="pi pi-plus"
-                label="New"
-                @click="router.push({ name: 'RecipeDetail', params: { id: 'new' } })"
-            />
+        <div class="page-header">
+            <div class="title">Recipes</div>
         </div>
+
+        <Button
+            icon="pi pi-plus"
+            class="new-btn"
+            @click="router.push({ name: 'RecipeDetail', params: { id: 'new' } })"
+        />
 
         <div class="sort-bar">
             <IconField>
@@ -126,16 +127,11 @@ onMounted(() => recipeStore.fetchAll());
     gap: 16px;
     min-height: 0;
     height: 100%;
+    position: relative;
 }
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-        margin: 0;
-    }
+.page-header {
+    margin-bottom: 6px;
 }
 
 .recipe-list {
@@ -202,5 +198,11 @@ onMounted(() => recipeStore.fetchAll());
     font-size: 0.9em;
     padding: 20px 0;
     text-align: center;
+}
+
+.new-btn {
+    position: absolute !important;
+    top: 8px;
+    right: 8px;
 }
 </style>
