@@ -17,6 +17,7 @@ export default defineConfig({
                 short_name: 'Mealio',
                 description: 'Household meal planner',
                 theme_color: '#2E7D32',
+                background_color: '#fffdf3',
                 icons: [
                     { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
                     { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },

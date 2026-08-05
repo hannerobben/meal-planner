@@ -25,7 +25,7 @@ async function signInHandler() {
 
 <template>
     <div class="wrapper">
-        <img src="/meal-planner/pwa-192x192.png" alt="Mealio" style="width: 80px; height: 80px; border-radius: 20px" />
+        <img :src="`${import.meta.env.BASE_URL}pwa-192x192.png`" alt="Mealio" style="width: 80px; height: 80px; border-radius: 20px" />
         <h1 style="margin: 0">Mealio</h1>
         <div class="login-form">
             <InputText v-model="email" placeholder="Email" type="email" />
