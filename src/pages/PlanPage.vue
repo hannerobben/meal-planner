@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import Menu from 'primevue/menu';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { usePlanStore } from '../stores/plan.store.ts';
@@ -190,6 +191,21 @@ const generating = ref(false);
 const generateConfirmVisible = ref(false);
 const clearConfirmVisible = ref(false);
 
+const actionsMenu = ref<InstanceType<typeof Menu>>();
+const actionsMenuItems = computed(() => [
+    {
+        label: 'Auto-fill week',
+        icon: 'pi pi-sparkles',
+        command: () => { generateConfirmVisible.value = true; }
+    },
+    {
+        label: 'Clear week',
+        icon: 'pi pi-trash',
+        disabled: !entries.value.length,
+        command: () => { clearConfirmVisible.value = true; }
+    }
+]);
+
 async function handleClear() {
     clearConfirmVisible.value = false;
     try {
@@ -277,27 +293,12 @@ function macrosForDate(date: string) {
 <template>
     <div class="plan-page">
         <div class="plan-header">
+            <Button icon="pi pi-ellipsis-v" text @click="actionsMenu?.toggle($event)" />
             <Button icon="pi pi-chevron-left" text @click="planStore.prevWeek()" />
             <span class="week-label">{{ weekLabel() }}</span>
             <Button icon="pi pi-chevron-right" text @click="planStore.nextWeek()" />
         </div>
-
-        <div class="plan-actions">
-            <Button
-                icon="pi pi-sparkles"
-                size="small"
-                outlined
-                :loading="generating"
-                @click="generateConfirmVisible = true"
-            />
-            <Button
-                icon="pi pi-trash"
-                size="small"
-                outlined
-                :disabled="!entries.length"
-                @click="clearConfirmVisible = true"
-            />
-        </div>
+        <Menu ref="actionsMenu" popup :model="actionsMenuItems" />
 
         <div v-if="loading" class="loading">Loading…</div>
         <WeekGrid
@@ -466,18 +467,12 @@ function macrosForDate(date: string) {
 .plan-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
 }
 
 .week-label {
     font-weight: 600;
-}
-
-.plan-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: -8px;
-    margin-bottom: -8px;
+    flex: 1;
+    text-align: center;
 }
 
 .macro-tabs {

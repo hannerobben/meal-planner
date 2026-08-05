@@ -25,9 +25,7 @@ async function signInHandler() {
 
 <template>
     <div class="wrapper">
-        <div>
-            <i class="pi pi-apple" style="font-size: 4rem; color: #2E7D32" />
-        </div>
+        <img src="/meal-planner/pwa-192x192.png" alt="Mealio" style="width: 80px; height: 80px; border-radius: 20px" />
         <h1 style="margin: 0">Mealio</h1>
         <div class="login-form">
             <InputText v-model="email" placeholder="Email" type="email" />
@@ -46,6 +44,7 @@ async function signInHandler() {
     align-items: center;
     height: 100%;
     gap: 20px;
+    background: rgb(255, 253, 243);
 
     .login-form {
         display: flex;

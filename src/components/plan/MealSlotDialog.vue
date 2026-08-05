@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entry.contract.ts';
 import type { RecipeContract } from '../../model/recipe.contract.ts';
 import type { AppUserContract } from '../../model/user.contract.ts';
@@ -33,6 +33,7 @@ const emit = defineEmits<{
     remove: [];
 }>();
 
+let _dialogInitializing = false;
 const addonLines = ref<DraftAddonLine[]>([]);
 const perUserAddonLines = ref<Record<string, DraftAddonLine[]>>({});
 
@@ -60,6 +61,7 @@ watch(
     () => props.visible,
     (v) => {
         if (!v) return;
+        _dialogInitializing = true;
         perUserRecipeIds.value = Object.fromEntries(props.householdUsers.map((u) => [u.id, null]));
         const isPerUser = props.slotEntries.some((e) => e.user_id !== null);
         if (isPerUser) {
@@ -100,11 +102,12 @@ watch(
                 return [u.id, (entry?.addon_recipes ?? []).map((ar) => ({ recipeId: ar.recipe_id }))];
             })
         );
+        nextTick(() => { _dialogInitializing = false; });
     }
 );
 
 watch(definePerUser, (perUser) => {
-    if (!perUser) return;
+    if (!perUser || _dialogInitializing) return;
     if (selectedRecipeId.value) {
         for (const u of props.householdUsers) {
             perUserRecipeIds.value[u.id] = selectedRecipeId.value;
