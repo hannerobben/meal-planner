@@ -2,9 +2,9 @@ import type { RecipeContract } from './recipe.contract.ts';
 import type { MealPlanEntryAddonIngredientContract } from './meal-plan-entry-addon-ingredient.contract.ts';
 import type { MealPlanEntryAddonRecipeContract } from './meal-plan-entry-addon-recipe.contract.ts';
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'extra';
 
-export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'extra'];
 
 export interface MealPlanEntryContract {
     id: string;

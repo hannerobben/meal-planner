@@ -95,7 +95,7 @@ onMounted(() => recipeStore.fetchAll());
 
         <div class="type-chips">
             <span
-                v-for="t in MEAL_TYPES"
+                v-for="t in MEAL_TYPES.filter((t) => t !== 'extra')"
                 :key="t"
                 class="type-chip"
                 :class="{ active: selectedType === t }"

@@ -6,6 +6,7 @@ export const MEAL_TYPE_COLORS: Record<MealType, string> = {
     lunch:     '#b5ead7',
     dinner:    '#ffb3ba',
     snack:     '#b3d9ff',
+    extra:     '#ef9a9a',
 };
 
 export const INGREDIENT_CATEGORY_COLORS: Record<IngredientCategory, string> = {

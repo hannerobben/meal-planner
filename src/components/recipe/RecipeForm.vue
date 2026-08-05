@@ -33,7 +33,7 @@ const notes = ref(props.recipe?.notes ?? '');
 const notSuggested = ref(props.recipe?.not_suggested ?? false);
 const isAddon = ref(props.recipe?.is_addon ?? false);
 
-const typeOptions = MEAL_TYPES.map((t) => ({
+const typeOptions = MEAL_TYPES.filter((t) => t !== 'extra').map((t) => ({
     label: t.charAt(0).toUpperCase() + t.slice(1),
     value: t
 }));
@@ -346,7 +346,7 @@ async function handleSave() {
 
         <div class="field-inline">
             <Checkbox v-model="isAddon" inputId="is-addon" :binary="true" />
-            <label for="is-addon">Mark as addon</label>
+            <label for="is-addon">Mark as side dish</label>
         </div>
 
         <Button

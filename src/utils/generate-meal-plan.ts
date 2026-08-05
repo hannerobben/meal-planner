@@ -24,6 +24,7 @@ const MEAL_PROPORTIONS: Record<MealType, number> = {
     lunch: 0.30,
     dinner: 0.35,
     snack: 0.10 / 3,
+    extra: 0,
 };
 
 function recipeMacros(recipe: RecipeContract): MacroTotals {

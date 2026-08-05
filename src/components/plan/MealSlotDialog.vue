@@ -7,6 +7,8 @@ import type { IngredientContract } from '../../model/ingredient.contract.ts';
 import { MEAL_TYPE_COLORS } from '../../model/type-colors.ts';
 import MealSlotEntryForm from './MealSlotEntryForm.vue';
 import type { DraftAddonLine, DraftAddonRecipeLine } from './MealSlotEntryForm.vue';
+import ExtraSlotForm from './ExtraSlotForm.vue';
+import RecipeViewerDialog from './RecipeViewerDialog.vue';
 
 const props = defineProps<{
     visible: boolean;
@@ -47,7 +49,6 @@ const perUserRecipeIds = ref<Record<string, string | null>>({});
 const originalPerUserRecipeIds = ref<Record<string, string | null>>({});
 const showRecipeViewer = ref(false);
 const viewingRecipeId = ref<string | null>(null);
-const portions = ref(1);
 
 const displayMealType = computed(
     () => props.slotEntries[0]?.meal_type ?? props.initialMealType ?? 'breakfast'
@@ -72,7 +73,7 @@ watch(
             selectedRecipeId.value = null;
             originalRecipeId.value = null;
         } else {
-            definePerUser.value = false;
+            definePerUser.value = props.slotEntries.length === 0 && displayMealType.value === 'extra';
             selectedRecipeId.value = props.slotEntries[0]?.recipe_id ?? null;
             originalRecipeId.value = props.slotEntries[0]?.recipe_id ?? null;
         }
@@ -147,6 +148,10 @@ const addonRecipeOptions = computed(() =>
         .map((r) => ({ label: r.name, value: r.id }))
 );
 
+const extraRecipeOptions = computed(() =>
+    props.recipes.map((r) => ({ label: r.name, value: r.id }))
+);
+
 function toAddonRecipes(lines: DraftAddonRecipeLine[]): string[] {
     return lines.filter((l) => l.recipeId !== null).map((l) => l.recipeId!);
 }
@@ -158,15 +163,38 @@ function toAddonIngredients(lines: DraftAddonLine[]): AddonIngredientLine[] {
 }
 
 const canSave = computed(() => {
+    if (displayMealType.value === 'extra') {
+        const hasItem = (recipes: DraftAddonRecipeLine[], ingredients: DraftAddonLine[]) =>
+            recipes.some((l) => l.recipeId !== null) ||
+            ingredients.some((l) => l.ingredientId !== null && l.quantity > 0);
+        if (definePerUser.value) {
+            return props.householdUsers.some((u) =>
+                hasItem(
+                    perUserAddonRecipeLines.value[u.id] ?? [],
+                    perUserAddonLines.value[u.id] ?? []
+                )
+            );
+        }
+        return hasItem(addonRecipeLines.value, addonLines.value);
+    }
     if (definePerUser.value) {
         return props.householdUsers.some((u) => !!perUserRecipeIds.value[u.id]);
     }
     return !!selectedRecipeId.value;
 });
 
+function onRecipeCleared() {
+    addonLines.value = [];
+    addonRecipeLines.value = [];
+}
+
+function onPerUserRecipeCleared(userId: string) {
+    perUserAddonLines.value[userId] = [];
+    perUserAddonRecipeLines.value[userId] = [];
+}
+
 function openRecipeViewer(recipeId: string) {
     viewingRecipeId.value = recipeId;
-    portions.value = 1;
     emit('update:visible', false);
     showRecipeViewer.value = true;
 }
@@ -175,7 +203,36 @@ function handleSave() {
     const mealType = props.slotEntries.length > 0 ? null : displayMealType.value;
     let userEntries: UserEntry[];
 
-    if (definePerUser.value) {
+    if (displayMealType.value === 'extra') {
+        if (definePerUser.value) {
+            userEntries = props.householdUsers
+                .filter((u) => {
+                    const recipes = perUserAddonRecipeLines.value[u.id] ?? [];
+                    const ingredients = perUserAddonLines.value[u.id] ?? [];
+                    return (
+                        recipes.some((l) => l.recipeId !== null) ||
+                        ingredients.some((l) => l.ingredientId !== null && l.quantity > 0)
+                    );
+                })
+                .map((u) => ({
+                    userId: u.id,
+                    recipeId: null,
+                    freeText: null,
+                    addonIngredients: toAddonIngredients(perUserAddonLines.value[u.id] ?? []),
+                    addonRecipes: toAddonRecipes(perUserAddonRecipeLines.value[u.id] ?? []),
+                }));
+        } else {
+            userEntries = [
+                {
+                    userId: null,
+                    recipeId: null,
+                    freeText: null,
+                    addonIngredients: toAddonIngredients(addonLines.value),
+                    addonRecipes: toAddonRecipes(addonRecipeLines.value),
+                },
+            ];
+        }
+    } else if (definePerUser.value) {
         userEntries = props.householdUsers
             .filter((u) => !!perUserRecipeIds.value[u.id])
             .map((u) => ({
@@ -193,7 +250,7 @@ function handleSave() {
                 freeText: null,
                 addonIngredients: toAddonIngredients(addonLines.value),
                 addonRecipes: toAddonRecipes(addonRecipeLines.value),
-            }
+            },
         ];
     }
 
@@ -231,37 +288,67 @@ const title = computed(() =>
                 </div>
             </div>
 
-            <!-- Single mode -->
-            <template v-if="!definePerUser">
-                <MealSlotEntryForm
-                    v-model:recipeId="selectedRecipeId"
-                    v-model:addonLines="addonLines"
-                    v-model:addonRecipeLines="addonRecipeLines"
-                    :originalRecipeId="originalRecipeId"
-                    :recipeOptions="recipeOptions"
-                    :addonRecipeOptions="addonRecipeOptions"
-                    :ingredientOptions="ingredientOptions"
-                    :ingredients="ingredients"
-                    @openRecipeViewer="openRecipeViewer"
-                />
+            <!-- Extra slot mode -->
+            <template v-if="displayMealType === 'extra'">
+                <template v-if="!definePerUser">
+                    <ExtraSlotForm
+                        v-model:recipeLines="addonRecipeLines"
+                        v-model:ingredientLines="addonLines"
+                        :recipeOptions="extraRecipeOptions"
+                        :ingredientOptions="ingredientOptions"
+                        :ingredients="ingredients"
+                    />
+                </template>
+                <template v-else>
+                    <div v-for="user in householdUsers" :key="user.id" class="user-form">
+                        <div class="user-form-name">{{ user.display_name }}</div>
+                        <ExtraSlotForm
+                            v-model:recipeLines="perUserAddonRecipeLines[user.id]"
+                            v-model:ingredientLines="perUserAddonLines[user.id]"
+                            :recipeOptions="extraRecipeOptions"
+                            :ingredientOptions="ingredientOptions"
+                            :ingredients="ingredients"
+                        />
+                    </div>
+                </template>
             </template>
 
-            <!-- Per-user mode -->
+            <!-- Regular slot mode -->
             <template v-else>
-                <div v-for="user in householdUsers" :key="user.id" class="user-form">
-                    <div class="user-form-name">{{ user.display_name }}</div>
+                <!-- Single mode -->
+                <template v-if="!definePerUser">
                     <MealSlotEntryForm
-                        v-model:recipeId="perUserRecipeIds[user.id]"
-                        v-model:addonLines="perUserAddonLines[user.id]"
-                        v-model:addonRecipeLines="perUserAddonRecipeLines[user.id]"
-                        :originalRecipeId="originalPerUserRecipeIds[user.id]"
+                        v-model:recipeId="selectedRecipeId"
+                        v-model:addonLines="addonLines"
+                        v-model:addonRecipeLines="addonRecipeLines"
+                        :originalRecipeId="originalRecipeId"
                         :recipeOptions="recipeOptions"
                         :addonRecipeOptions="addonRecipeOptions"
                         :ingredientOptions="ingredientOptions"
                         :ingredients="ingredients"
+                        @update:recipeId="(v) => { if (v === null) onRecipeCleared(); }"
                         @openRecipeViewer="openRecipeViewer"
                     />
-                </div>
+                </template>
+
+                <!-- Per-user mode -->
+                <template v-else>
+                    <div v-for="user in householdUsers" :key="user.id" class="user-form">
+                        <div class="user-form-name">{{ user.display_name }}</div>
+                        <MealSlotEntryForm
+                            v-model:recipeId="perUserRecipeIds[user.id]"
+                            v-model:addonLines="perUserAddonLines[user.id]"
+                            v-model:addonRecipeLines="perUserAddonRecipeLines[user.id]"
+                            :originalRecipeId="originalPerUserRecipeIds[user.id]"
+                            :recipeOptions="recipeOptions"
+                            :addonRecipeOptions="addonRecipeOptions"
+                            :ingredientOptions="ingredientOptions"
+                            :ingredients="ingredients"
+                            @update:recipeId="(v) => { if (v === null) onPerUserRecipeCleared(user.id); }"
+                            @openRecipeViewer="openRecipeViewer"
+                        />
+                    </div>
+                </template>
             </template>
         </div>
 
@@ -289,46 +376,7 @@ const title = computed(() =>
         </template>
     </Dialog>
 
-    <Dialog
-        v-model:visible="showRecipeViewer"
-        :header="viewingRecipe?.name"
-        modal
-        style="width: 340px"
-    >
-        <div class="recipe-viewer">
-            <div
-                v-if="viewingRecipe?.image_url"
-                class="recipe-image"
-                :style="{ backgroundImage: `url(${viewingRecipe.image_url})` }"
-            />
-
-            <div class="portion-control">
-                <span class="portion-label">Portions</span>
-                <div class="portion-stepper">
-                    <button class="portion-btn" :disabled="portions <= 1" @click="portions--">
-                        −
-                    </button>
-                    <span class="portion-value">{{ portions }}</span>
-                    <button class="portion-btn" @click="portions++">+</button>
-                </div>
-            </div>
-
-            <div v-if="viewingRecipe?.ingredients?.length" class="ingredient-list">
-                <div v-for="ri in viewingRecipe.ingredients" :key="ri.id" class="ingredient-row">
-                    <span class="ingredient-name">{{ ri.ingredient?.name }}</span>
-                    <span class="ingredient-qty">
-                        {{ ri.quantity * portions
-                        }}{{ ri.ingredient?.base_unit !== 'item' ? ri.ingredient?.base_unit : '' }}
-                    </span>
-                </div>
-            </div>
-            <p v-else class="no-ingredients">No ingredients listed.</p>
-
-            <template v-if="viewingRecipe?.notes">
-                <p class="recipe-notes">{{ viewingRecipe.notes }}</p>
-            </template>
-        </div>
-    </Dialog>
+    <RecipeViewerDialog v-model:visible="showRecipeViewer" :recipe="viewingRecipe" />
 </template>
 
 <style scoped>
@@ -382,104 +430,4 @@ const title = computed(() =>
     width: 100%;
 }
 
-.recipe-viewer {
-    padding: 4px 0 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-.recipe-image {
-    width: 100%;
-    height: 160px;
-    background-size: cover;
-    background-position: center;
-    border-radius: 6px;
-    margin-bottom: 12px;
-}
-
-.portion-control {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 0 4px;
-}
-
-.portion-label {
-    font-size: 0.85em;
-    color: #555;
-}
-
-.portion-stepper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.portion-btn {
-    width: 26px;
-    height: 26px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    cursor: pointer;
-    font-size: 1em;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    color: #333;
-
-    &:hover:not(:disabled) {
-        background: #f0f0f0;
-    }
-
-    &:disabled {
-        opacity: 0.35;
-        cursor: default;
-    }
-}
-
-.portion-value {
-    font-size: 0.9em;
-    font-weight: 600;
-    min-width: 16px;
-    text-align: center;
-}
-
-.ingredient-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.ingredient-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9em;
-}
-
-.ingredient-name {
-    color: #333;
-}
-
-.ingredient-qty {
-    color: #666;
-    font-variant-numeric: tabular-nums;
-}
-
-.no-ingredients {
-    color: #888;
-    font-size: 0.9em;
-    margin: 0;
-}
-
-.recipe-notes {
-    font-size: 0.85em;
-    color: #555;
-    white-space: pre-wrap;
-    margin: 0;
-}
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { IngredientContract } from '../../model/ingredient.contract.ts';
+import { ingredientUnit as _ingredientUnit } from '../../utils/ingredient-unit.ts';
 
 export type DraftAddonLine = { ingredientId: string | null; quantity: number };
 export type DraftAddonRecipeLine = { recipeId: string | null };
@@ -21,8 +22,7 @@ const emit = defineEmits<{
 }>();
 
 function ingredientUnit(ingredientId: string | null): string {
-    if (!ingredientId) return '';
-    return props.ingredients.find((i) => i.id === ingredientId)?.base_unit ?? '';
+    return _ingredientUnit(ingredientId, props.ingredients);
 }
 
 function addAddonLine() {
@@ -49,8 +49,9 @@ function removeAddonRecipeLine(index: number) {
             :options="recipeOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="Choose a recipe…"
+            placeholder="Choose a meal…"
             filter
+            showClear
             style="flex: 1; min-width: 0"
         />
         <Button
@@ -108,7 +109,7 @@ function removeAddonRecipeLine(index: number) {
                 @click="removeAddonRecipeLine(i)"
             />
         </div>
-        <button class="add-ingredient-link" @click="addAddonRecipeLine()">+ Add recipe</button>
+        <button class="add-ingredient-link" @click="addAddonRecipeLine()">+ Add side dish</button>
     </div>
 </template>
 
