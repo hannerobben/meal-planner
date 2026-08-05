@@ -18,6 +18,7 @@ const props = defineProps<{
     householdUsers: AppUserContract[];
     ingredients: IngredientContract[];
     initialMealType?: MealType;
+    selfUserId?: string;
 }>();
 
 export type AddonIngredientLine = { ingredientId: string; quantity: number };
@@ -64,7 +65,7 @@ watch(
         if (!v) return;
         _dialogInitializing = true;
         perUserRecipeIds.value = Object.fromEntries(props.householdUsers.map((u) => [u.id, null]));
-        const isPerUser = props.slotEntries.some((e) => e.user_id !== null);
+        const isPerUser = !props.selfUserId && props.slotEntries.some((e) => e.user_id !== null);
         if (isPerUser) {
             definePerUser.value = true;
             for (const e of props.slotEntries) {
@@ -73,7 +74,7 @@ watch(
             selectedRecipeId.value = null;
             originalRecipeId.value = null;
         } else {
-            definePerUser.value = props.slotEntries.length === 0 && displayMealType.value === 'extra';
+            definePerUser.value = !props.selfUserId && props.slotEntries.length === 0 && displayMealType.value === 'extra';
             selectedRecipeId.value = props.slotEntries[0]?.recipe_id ?? null;
             originalRecipeId.value = props.slotEntries[0]?.recipe_id ?? null;
         }
@@ -224,7 +225,7 @@ function handleSave() {
         } else {
             userEntries = [
                 {
-                    userId: null,
+                    userId: props.selfUserId ?? null,
                     recipeId: null,
                     freeText: null,
                     addonIngredients: toAddonIngredients(addonLines.value),
@@ -245,7 +246,7 @@ function handleSave() {
     } else {
         userEntries = [
             {
-                userId: null,
+                userId: props.selfUserId ?? null,
                 recipeId: selectedRecipeId.value,
                 freeText: null,
                 addonIngredients: toAddonIngredients(addonLines.value),

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from '../pages/LoginPage.vue';
 import PlanPage from '../pages/PlanPage.vue';
+import TrackingPage from '../pages/TrackingPage.vue';
 import RecipesPage from '../pages/RecipesPage.vue';
 import RecipeDetailPage from '../pages/RecipeDetailPage.vue';
 import IngredientsPage from '../pages/IngredientsPage.vue';
@@ -23,6 +24,7 @@ const routes = [
         redirect: { name: 'Plan' },
         children: [
             { path: 'plan', name: 'Plan', component: PlanPage },
+            { path: 'tracking', name: 'Tracking', component: TrackingPage },
             { path: 'recipes', name: 'Recipes', component: RecipesPage },
             { path: 'recipes/:id', name: 'RecipeDetail', component: RecipeDetailPage },
             { path: 'ingredients', name: 'Ingredients', component: IngredientsPage },

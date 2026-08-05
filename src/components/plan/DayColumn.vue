@@ -52,10 +52,22 @@ const allSlots = computed(() => {
             slotEntries = sortByUser(props.entries.filter((e) => e.meal_type === mealType));
             slotIndex = 0;
         }
-        return { mealType, entries: slotEntries, slotIndex, perUser: toPerUser(slotEntries), isExtra: false };
+        return {
+            mealType,
+            entries: slotEntries,
+            slotIndex,
+            perUser: toPerUser(slotEntries),
+            isExtra: false
+        };
     });
     const extraEntries = sortByUser(props.entries.filter((e) => e.meal_type === 'extra'));
-    regular.push({ mealType: 'extra' as MealType, entries: extraEntries, slotIndex: 0, perUser: toPerUser(extraEntries), isExtra: true });
+    regular.push({
+        mealType: 'extra' as MealType,
+        entries: extraEntries,
+        slotIndex: 0,
+        perUser: toPerUser(extraEntries),
+        isExtra: true
+    });
     return regular;
 });
 </script>
@@ -94,7 +106,8 @@ const allSlots = computed(() => {
                             v-if="entry?.addon_ingredients?.length || entry?.addon_recipes?.length"
                             class="addon-dot"
                             :class="{ 'addon-dot-red': slot.isExtra }"
-                        >+</span>
+                            >+</span
+                        >
                     </div>
                 </div>
                 <!-- Filled single-entry regular slot -->
@@ -111,9 +124,13 @@ const allSlots = computed(() => {
                 >
                     <div class="slot-part">
                         <span
-                            v-if="slot.entries[0]?.addon_ingredients?.length || slot.entries[0]?.addon_recipes?.length"
+                            v-if="
+                                slot.entries[0]?.addon_ingredients?.length ||
+                                slot.entries[0]?.addon_recipes?.length
+                            "
                             class="addon-dot addon-dot-red"
-                        >+</span>
+                            >+</span
+                        >
                     </div>
                 </div>
                 <!-- Empty slot -->
@@ -144,7 +161,6 @@ const allSlots = computed(() => {
 
 .day-header {
     text-align: center;
-    padding-bottom: 4px;
 }
 
 .day-name {
