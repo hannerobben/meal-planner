@@ -60,13 +60,10 @@ onMounted(() => recipeStore.fetchAll());
 
 <template>
     <div class="recipes-page">
-        <div class="page-header">
-            <div class="title">Recipes</div>
-        </div>
-
         <Button
             icon="pi pi-plus"
             class="new-btn"
+            variant="outlined"
             @click="router.push({ name: 'RecipeDetail', params: { id: 'new' } })"
         />
 
@@ -127,11 +124,6 @@ onMounted(() => recipeStore.fetchAll());
     gap: 16px;
     min-height: 0;
     height: 100%;
-    position: relative;
-}
-
-.page-header {
-    margin-bottom: 6px;
 }
 
 .recipe-list {
@@ -176,6 +168,7 @@ onMounted(() => recipeStore.fetchAll());
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    justify-content: space-between;
 }
 
 .type-chip {
@@ -187,6 +180,8 @@ onMounted(() => recipeStore.fetchAll());
     background-color: #e0e0e0;
     border: 2px solid transparent;
     user-select: none;
+    flex: 1;
+    text-align: center;
 
     &.active {
         border-color: #555;
@@ -202,7 +197,8 @@ onMounted(() => recipeStore.fetchAll());
 
 .new-btn {
     position: absolute !important;
-    top: 8px;
-    right: 8px;
+    top: 3px;
+    right: 12px;
+    z-index: 100;
 }
 </style>

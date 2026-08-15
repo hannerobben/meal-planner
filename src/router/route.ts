@@ -23,13 +23,43 @@ const routes = [
         meta: { requiresAuth: true, layout: DefaultLayout },
         redirect: { name: 'Plan' },
         children: [
-            { path: 'plan', name: 'Plan', component: PlanPage },
-            { path: 'tracking', name: 'Tracking', component: TrackingPage },
-            { path: 'recipes', name: 'Recipes', component: RecipesPage },
-            { path: 'recipes/:id', name: 'RecipeDetail', component: RecipeDetailPage },
-            { path: 'ingredients', name: 'Ingredients', component: IngredientsPage },
-            { path: 'shopping', name: 'Shopping', component: ShoppingPage },
-            { path: 'profile', name: 'Profile', component: ProfilePage }
+            { path: 'plan', name: 'Plan', component: PlanPage, meta: { title: 'Planning' } },
+            {
+                path: 'tracking',
+                name: 'Tracking',
+                component: TrackingPage,
+                meta: { title: 'My Tracker' }
+            },
+            {
+                path: 'recipes',
+                name: 'Recipes',
+                component: RecipesPage,
+                meta: { title: 'Recipes' }
+            },
+            {
+                path: 'recipes/:id',
+                name: 'RecipeDetail',
+                component: RecipeDetailPage,
+                meta: { title: 'Recipe', backlink: { name: 'Recipes' } }
+            },
+            {
+                path: 'ingredients',
+                name: 'Ingredients',
+                component: IngredientsPage,
+                meta: { title: 'Ingredients' }
+            },
+            {
+                path: 'shopping',
+                name: 'Shopping',
+                component: ShoppingPage,
+                meta: { title: 'Shopping' }
+            },
+            {
+                path: 'profile',
+                name: 'Profile',
+                component: ProfilePage,
+                meta: { title: 'Nutrition Profile' }
+            }
         ]
     }
 ];

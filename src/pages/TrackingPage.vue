@@ -253,19 +253,21 @@ function macrosForDate(date: string) {
 
 <template>
     <div class="tracking-page">
-        <h2 class="page-title">{{ appUser?.display_name }}'s Tracker</h2>
         <div class="plan-header">
             <Button icon="pi pi-chevron-left" text @click="planStore.prevWeek()" />
             <span class="week-label">{{ weekLabel() }}</span>
             <Button icon="pi pi-chevron-right" text @click="planStore.nextWeek()" />
         </div>
 
-        <div v-if="loading" class="loading">Loading…</div>
+        <div v-if="loading" class="loading-overlay">
+            <ProgressSpinner strokeWidth="3" />
+        </div>
         <WeekGrid
             v-else
             :weekStart="weekStart"
             :entries="selfEntries"
             :householdUserIds="appUser ? [appUser.id] : []"
+            :showViewSelector="true"
             @slotClick="(date, slotEntries) => openEntry(date, slotEntries)"
             @addClick="(date, mealType, slotIndex) => openNew(date, mealType, slotIndex)"
         />
@@ -368,26 +370,19 @@ function macrosForDate(date: string) {
 
 <style scoped>
 .tracking-page {
-    padding: 16px;
+    padding: 0 16px 16px;
     display: flex;
     flex-direction: column;
     height: 100%;
     box-sizing: border-box;
-}
-
-.page-title {
-    margin: 0;
-    font-size: 0.85em;
-    font-weight: 700;
-    text-align: center;
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
+    position: relative;
 }
 
 .plan-header {
     display: flex;
     align-items: center;
     border-radius: 8px;
+    padding: 4px 0;
 }
 
 .week-label {
@@ -397,10 +392,15 @@ function macrosForDate(date: string) {
     font-size: 14px;
 }
 
-.loading {
-    text-align: center;
-    color: #888;
-    padding: 40px 0;
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 10;
+    border-radius: 8px;
 }
 
 .macro-row {
@@ -426,7 +426,7 @@ function macrosForDate(date: string) {
         flex-direction: column;
         align-items: center;
         line-height: 1.1;
-        font-size: 0.52em;
+        font-size: 0.6em;
         font-weight: 600;
         width: 100%;
         flex: 1;

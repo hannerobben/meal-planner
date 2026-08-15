@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import type { MealPlanEntryContract } from '../../model/meal-plan-entry.contract.ts';
+import type { ViewMode } from './WeekGrid.vue';
 
-defineProps<{ entry: MealPlanEntryContract }>();
+defineProps<{
+    entry: MealPlanEntryContract;
+    viewMode?: ViewMode;
+    macroValue?: string;
+    heatBackground?: string;
+    heatTextColor?: string;
+}>();
 defineEmits<{ click: [] }>();
 </script>
 
@@ -9,17 +16,24 @@ defineEmits<{ click: [] }>();
     <div
         class="meal-slot"
         :style="
-            entry.recipe?.image_url
+            viewMode === 'meals' && entry.recipe?.image_url
                 ? {
                       backgroundImage: `url(${entry.recipe.image_url})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center'
                   }
+                : viewMode !== 'meals' && heatBackground
+                ? { background: heatBackground, color: heatTextColor, borderColor: 'transparent' }
                 : {}
         "
         @click="$emit('click')"
     >
-        <span v-if="entry.addon_ingredients?.length || entry.addon_recipes?.length" class="addon-dot">+</span>
+        <span v-if="viewMode !== 'meals' && macroValue" class="macro-number">{{ macroValue }}</span>
+        <span
+            v-else-if="entry.addon_ingredients?.length || entry.addon_recipes?.length"
+            class="addon-dot"
+            >+</span
+        >
     </div>
 </template>
 
@@ -32,6 +46,16 @@ defineEmits<{ click: [] }>();
     cursor: pointer;
     min-height: 36px;
     position: relative;
+}
+
+.macro-number {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 600;
 }
 
 .addon-dot {

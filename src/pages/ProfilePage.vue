@@ -92,46 +92,36 @@ async function handleSignOut() {
 
 <template>
     <div class="profile-page">
-        <div class="page-header">
-            <div class="title">Profile</div>
-        </div>
-
-        <div class="field">
-            <label>Email</label>
-            <p>{{ authUser?.email }}</p>
-        </div>
-
         <div class="section">
-            <h3 class="section-title">Nutrition profile</h3>
-
-            <div v-if="macros" class="results">
-                <div class="result-card result-card--tdee">
-                    <span class="result-label">Daily calorie target</span>
-                    <span class="result-value">{{ macros.target_kcal }} <small>kcal</small></span>
-                    <span v-if="macros.target_kcal !== macros.tdee" class="result-kcal"
-                        >TDEE: {{ macros.tdee }} kcal</span
-                    >
+            <div v-if="macros" class="macro-card">
+                <div class="macro-card__kcal">
+                    <span class="macro-card__kcal-value">{{ macros.target_kcal }}</span>
+                    <span class="macro-card__kcal-unit">kcal / day</span>
+                    <span v-if="macros.target_kcal !== macros.tdee" class="macro-card__tdee">
+                        TDEE {{ macros.tdee }} kcal
+                    </span>
                 </div>
-                <div class="macros-row">
-                    <div class="result-card">
-                        <span class="result-label">Protein</span>
-                        <span class="result-value">{{ macros.protein_g }}<small>g</small></span>
-                        <span class="result-kcal">{{ macros.protein_kcal }} kcal</span>
+                <div class="macro-card__divider" />
+                <div class="macro-card__macros">
+                    <div class="macro-card__macro">
+                        <span class="macro-card__macro-value"
+                            >{{ macros.protein_g }}<em>g</em></span
+                        >
+                        <span class="macro-card__macro-label">Protein</span>
+                        <span class="macro-card__macro-kcal">{{ macros.protein_kcal }} kcal</span>
                     </div>
-                    <div class="result-card">
-                        <span class="result-label">Fat</span>
-                        <span class="result-value">{{ macros.fat_g }}<small>g</small></span>
-                        <span class="result-kcal">{{ macros.fat_kcal }} kcal</span>
+                    <div class="macro-card__macro">
+                        <span class="macro-card__macro-value">{{ macros.fat_g }}<em>g</em></span>
+                        <span class="macro-card__macro-label">Fat</span>
+                        <span class="macro-card__macro-kcal">{{ macros.fat_kcal }} kcal</span>
                     </div>
-                    <div class="result-card">
-                        <span class="result-label">Carbs</span>
-                        <span class="result-value">{{ macros.carbs_g }}<small>g</small></span>
-                        <span class="result-kcal">{{ macros.carbs_kcal }} kcal</span>
+                    <div class="macro-card__macro">
+                        <span class="macro-card__macro-value">{{ macros.carbs_g }}<em>g</em></span>
+                        <span class="macro-card__macro-label">Carbs</span>
+                        <span class="macro-card__macro-kcal">{{ macros.carbs_kcal }} kcal</span>
                     </div>
                 </div>
             </div>
-
-            <Divider />
 
             <div class="fields-grid">
                 <div class="field">
@@ -231,7 +221,7 @@ async function handleSignOut() {
     </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .profile-page {
     padding: 16px;
     display: flex;
@@ -259,8 +249,6 @@ async function handleSignOut() {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding-top: 8px;
-    border-top: 1px solid #e0e0e0;
 }
 
 .fields-grid {
@@ -283,62 +271,85 @@ async function handleSignOut() {
     font-weight: 600;
 }
 
-.results {
+.macro-card {
+    background: #2e7d32;
+    border-radius: 16px;
+    padding: 20px;
+    color: #fff;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
+    gap: 16px;
+    margin-bottom: 16px;
 
-.macros-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-}
+    &__kcal {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
 
-.result-card {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    &__kcal-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
 
-    &--tdee {
-        background: #f1f8e9;
-        border-color: #c5e1a5;
+    &__kcal-unit {
+        font-size: 0.85em;
+        opacity: 0.8;
+        letter-spacing: 0.04em;
+    }
 
-        .result-value {
-            font-size: 1.6rem;
-            color: #2e7d32;
+    &__tdee {
+        font-size: 0.75em;
+        opacity: 0.6;
+        margin-top: 2px;
+    }
+
+    &__divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    &__macros {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    &__macro {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+
+        &:not(:last-child) {
+            border-right: 1px solid rgba(255, 255, 255, 0.25);
         }
     }
-}
 
-.result-label {
-    font-size: 0.75em;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
+    &__macro-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
 
-.result-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    line-height: 1;
-
-    small {
-        font-size: 0.55em;
-        font-weight: 400;
-        color: #888;
-        margin-left: 1px;
+        em {
+            font-style: normal;
+            font-size: 0.55em;
+            font-weight: 400;
+            opacity: 0.8;
+        }
     }
-}
 
-.result-kcal {
-    font-size: 0.75em;
-    color: #999;
-    margin-top: 2px;
+    &__macro-label {
+        font-size: 0.75em;
+        opacity: 0.8;
+        letter-spacing: 0.04em;
+    }
+
+    &__macro-kcal {
+        font-size: 0.7em;
+        opacity: 0.55;
+    }
 }
 
 .signout {

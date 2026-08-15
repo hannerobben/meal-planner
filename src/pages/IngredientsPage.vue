@@ -180,11 +180,7 @@ async function saveNew() {
 
 <template>
     <div class="ingredients-page">
-        <div class="page-header">
-            <div class="title">Ingredients</div>
-        </div>
-
-        <Button icon="pi pi-plus" class="new-btn" @click="openNewDialog" />
+        <Button icon="pi pi-plus" class="new-btn" variant="outlined" @click="openNewDialog" />
 
         <div class="sort-bar">
             <IconField>
@@ -407,10 +403,6 @@ async function saveNew() {
     height: 100%;
 }
 
-.page-header {
-    margin-bottom: 6px;
-}
-
 .sort-bar {
     display: flex;
     justify-content: space-between;
@@ -447,6 +439,7 @@ async function saveNew() {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    justify-content: space-between;
 }
 
 .category-chip {
@@ -525,7 +518,7 @@ async function saveNew() {
 
 .new-btn {
     position: absolute !important;
-    top: 8px;
-    right: 8px;
+    top: 3px;
+    right: 12px;
 }
 </style>

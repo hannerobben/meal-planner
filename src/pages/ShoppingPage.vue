@@ -51,12 +51,7 @@ function toggle(name: string, unit: string, category: IngredientCategory) {
 
 <template>
     <div class="shopping-page">
-        <div class="page-header">
-            <div class="title" style="margin-bottom: 0">Shopping List</div>
-        </div>
-
         <div class="date-range">
-            <label>From</label>
             <DatePicker v-model="fromDate" dateFormat="D d M" />
             <label>To</label>
             <DatePicker v-model="toDate" dateFormat="D d M" />
@@ -116,6 +111,7 @@ function toggle(name: string, unit: string, category: IngredientCategory) {
     display: flex;
     align-items: center;
     gap: 10px;
+    justify-content: flex-end;
 
     label {
         font-size: 0.85em;

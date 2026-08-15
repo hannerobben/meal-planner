@@ -298,18 +298,17 @@ function macrosForDate(date: string) {
 
 <template>
     <div class="plan-page">
-        <div class="title-row">
-            <div class="title-side" />
-            <h2 class="page-title">Planning</h2>
-            <div class="title-side">
-                <Button
-                    icon="pi pi-ellipsis-v"
-                    text
-                    class="actions-btn"
-                    @click="actionsMenu?.toggle($event)"
-                />
-            </div>
-        </div>
+        <!--        <div class="title-row">-->
+        <!--            <div class="title-side" />-->
+        <!--            <div class="title-side">-->
+        <!--                <Button-->
+        <!--                    icon="pi pi-ellipsis-v"-->
+        <!--                    text-->
+        <!--                    class="actions-btn"-->
+        <!--                    @click="actionsMenu?.toggle($event)"-->
+        <!--                />-->
+        <!--            </div>-->
+        <!--        </div>-->
         <div class="plan-header">
             <Button icon="pi pi-chevron-left" text @click="planStore.prevWeek()" />
             <span class="week-label">{{ weekLabel() }}</span>
@@ -317,12 +316,15 @@ function macrosForDate(date: string) {
         </div>
         <Menu ref="actionsMenu" popup :model="actionsMenuItems" />
 
-        <div v-if="loading" class="loading">Loading…</div>
+        <div v-if="loading" class="loading-overlay">
+            <ProgressSpinner strokeWidth="3" />
+        </div>
         <WeekGrid
             v-else
             :weekStart="weekStart"
             :entries="entries"
             :householdUserIds="orderedHouseholdUserIds"
+            :showViewSelector="false"
             @slotClick="(date, entries) => openEntry(date, entries)"
             @addClick="(date, mealType, slotIndex) => openNew(date, mealType, slotIndex)"
         />
@@ -473,40 +475,18 @@ function macrosForDate(date: string) {
 
 <style scoped>
 .plan-page {
-    padding: 16px;
+    padding: 0 16px 16px;
     display: flex;
     flex-direction: column;
     height: 100%;
     box-sizing: border-box;
-}
-
-.title-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.title-side {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.page-title {
-    margin: 0;
-    font-size: 0.85em;
-    font-weight: 700;
-    text-align: center;
-    letter-spacing: 0.08em;
-}
-
-:deep(.actions-btn) {
-    padding: 0;
+    position: relative;
 }
 
 .plan-header {
     display: flex;
     align-items: center;
+    padding: 4px 0;
 }
 
 .week-label {
@@ -538,10 +518,15 @@ function macrosForDate(date: string) {
     }
 }
 
-.loading {
-    text-align: center;
-    color: #888;
-    padding: 40px 0;
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 10;
+    border-radius: 8px;
 }
 
 .macro-row {
@@ -566,7 +551,7 @@ function macrosForDate(date: string) {
         flex-direction: column;
         align-items: center;
         line-height: 1.1;
-        font-size: 0.52em;
+        font-size: 0.6em;
         font-weight: 600;
         width: 100%;
         flex: 1;

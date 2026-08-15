@@ -25,7 +25,8 @@ const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
                     :key="t"
                     class="type-badge"
                     :style="{ backgroundColor: MEAL_TYPE_COLORS[t] }"
-                >{{ t }}</span>
+                    >{{ t }}</span
+                >
             </div>
         </div>
         <div class="display-row">
@@ -48,7 +49,7 @@ const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
                 </span>
             </div>
             <div class="icons">
-                <i v-if="recipe.not_suggested" class="pi pi-eye-slash" />
+                <i v-if="recipe.not_suggested" class="pi pi-times-circle" />
                 <i v-if="recipe.is_addon" class="pi pi-th-large" />
             </div>
         </div>

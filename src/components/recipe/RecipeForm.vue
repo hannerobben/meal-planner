@@ -258,26 +258,32 @@ async function handleSave() {
 
 <template>
     <div class="recipe-form">
-        <div
-            class="image-upload"
-            :style="previewUrl ? { backgroundImage: `url(${previewUrl})` } : {}"
-            @click="fileInput?.click()"
-        >
-            <span v-if="!previewUrl" class="image-placeholder">
-                <i class="pi pi-image" />
-                <span>Add photo</span>
-            </span>
-            <button v-if="previewUrl" class="remove-image" @click.stop="clearImage">
-                <i class="pi pi-times" />
-            </button>
+        <template v-if="recipeId">
+            <div
+                class="image-upload"
+                :style="previewUrl ? { backgroundImage: `url(${previewUrl})` } : {}"
+                @click="fileInput?.click()"
+            >
+                <span v-if="!previewUrl" class="image-placeholder">
+                    <i class="pi pi-image" />
+                    <span>Add photo</span>
+                </span>
+                <button v-if="previewUrl" class="remove-image" @click.stop="clearImage">
+                    <i class="pi pi-times" />
+                </button>
+            </div>
+            <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="onFileChange"
+            />
+        </template>
+        <div v-else class="image-upload image-upload--new">
+            <i class="pi pi-image" />
+            <span>Save first to add a photo</span>
         </div>
-        <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            style="display: none"
-            @change="onFileChange"
-        />
 
         <div class="field">
             <label>Name *</label>
@@ -341,7 +347,7 @@ async function handleSave() {
 
         <div class="field-inline">
             <Checkbox v-model="notSuggested" inputId="not-suggested" :binary="true" />
-            <label for="not-suggested">Exclude from meal slot suggestions</label>
+            <label for="not-suggested">Mark as unhealthy</label>
         </div>
 
         <div class="field-inline">
@@ -455,6 +461,18 @@ async function handleSave() {
 
     &:hover {
         border-color: #aaa;
+    }
+
+    &.image-upload--new {
+        cursor: default;
+        flex-direction: column;
+        gap: 8px;
+        color: #ccc;
+        font-size: 0.85em;
+
+        &:hover {
+            border-color: #ddd;
+        }
     }
 }
 

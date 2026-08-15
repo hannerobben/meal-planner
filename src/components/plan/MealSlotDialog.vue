@@ -128,15 +128,22 @@ watch(definePerUser, (perUser) => {
 });
 
 const recipeOptions = computed(() => {
-    const existingIds = new Set(props.slotEntries.map((e) => e.recipe_id).filter(Boolean));
-    return props.recipes
-        .filter(
-            (r) =>
-                !r.is_addon &&
-                r.type.includes(displayMealType.value) &&
-                (!r.not_suggested || existingIds.has(r.id))
-        )
-        .map((r) => ({ label: r.name, value: r.id }));
+    const base = props.recipes.filter(
+        (r) => !r.is_addon && r.type.includes(displayMealType.value)
+    );
+    const recommended = base
+        .filter((r) => !r.not_suggested)
+        .map((r) => ({ label: r.name, value: r.id, notRecommended: false }));
+    const notRecommended = base
+        .filter((r) => r.not_suggested)
+        .map((r) => ({ label: r.name, value: r.id, notRecommended: true }));
+    const groups: { label: string; items: { label: string; value: string }[] }[] = [
+        { label: '', items: recommended }
+    ];
+    if (notRecommended.length) {
+        groups.push({ label: 'Not recommended', items: notRecommended });
+    }
+    return groups;
 });
 
 const ingredientOptions = computed(() =>

@@ -11,7 +11,7 @@ const addonRecipeLines = defineModel<DraftAddonRecipeLine[]>('addonRecipeLines',
 
 const props = defineProps<{
     originalRecipeId: string | null;
-    recipeOptions: { label: string; value: string }[];
+    recipeOptions: { label: string; items: { label: string; value: string; notRecommended: boolean }[] }[];
     addonRecipeOptions: { label: string; value: string }[];
     ingredientOptions: { label: string; value: string }[];
     ingredients: IngredientContract[];
@@ -49,11 +49,20 @@ function removeAddonRecipeLine(index: number) {
             :options="recipeOptions"
             optionLabel="label"
             optionValue="value"
+            optionGroupLabel="label"
+            optionGroupChildren="items"
             placeholder="Choose a meal…"
             filter
             showClear
             style="flex: 1; min-width: 0"
-        />
+        >
+            <template #option="{ option }">
+                <span class="recipe-option">
+                    <span v-if="option.notRecommended" class="not-recommended-dot" />
+                    {{ option.label }}
+                </span>
+            </template>
+        </Select>
         <Button
             v-if="recipeId && recipeId === originalRecipeId"
             icon="pi pi-book"
@@ -114,6 +123,20 @@ function removeAddonRecipeLine(index: number) {
 </template>
 
 <style scoped>
+.recipe-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.not-recommended-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #e53935;
+    flex-shrink: 0;
+}
+
 .recipe-row {
     display: flex;
     gap: 8px;

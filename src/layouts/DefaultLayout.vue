@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import AppFooterMenu from '../components/AppFooterMenu.vue';
 import { useIngredientStore } from '../stores/ingredient.store.ts';
+import AppHeader from '../components/AppHeader.vue';
 
 onMounted(() => {
     useIngredientStore().fetchAll();
@@ -10,6 +11,7 @@ onMounted(() => {
 
 <template>
     <div class="full-page">
+        <AppHeader></AppHeader>
         <div class="page-container custom-scrollbar">
             <div class="page-content">
                 <RouterView />

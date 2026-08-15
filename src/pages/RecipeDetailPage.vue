@@ -27,25 +27,8 @@ watch(
 
 <template>
     <div>
-        <div class="page-header">
-            <Button icon="pi pi-arrow-left" text rounded @click="router.push({ name: 'Recipes' })" />
-            <span class="page-title">{{ isNew ? 'New recipe' : 'Edit recipe' }}</span>
-        </div>
         <div v-if="loading" style="padding: 20px">Loading…</div>
         <RecipeForm v-else :recipe="isNew ? undefined : currentRecipe" />
     </div>
 </template>
 
-<style scoped>
-.page-header {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 12px 0;
-}
-
-.page-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-</style>

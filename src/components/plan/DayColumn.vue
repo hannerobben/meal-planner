@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { MealPlanEntryContract, MealType } from '../../model/meal-plan-entry.contract.ts';
+import type { ViewMode } from './WeekGrid.vue';
 import MealSlot from './MealSlot.vue';
+import { ingredientFactor } from '../../utils/recipe-macros.ts';
 import dayjs from 'dayjs';
 
 const SLOT_ORDER: MealType[] = ['breakfast', 'snack', 'lunch', 'snack', 'dinner', 'snack'];
@@ -10,12 +12,63 @@ const props = defineProps<{
     date: string;
     entries: MealPlanEntryContract[];
     householdUserIds: string[];
+    viewMode: ViewMode;
+    globalMax: number;
 }>();
 
 const emit = defineEmits<{
     slotClick: [date: string, entries: MealPlanEntryContract[]];
     addClick: [date: string, mealType: MealType, slotIndex: number];
 }>();
+
+function macrosForEntries(entries: MealPlanEntryContract[]) {
+    let kcal = 0,
+        protein = 0;
+    for (const e of entries) {
+        for (const ri of e.recipe?.ingredients ?? []) {
+            if (!ri.ingredient) continue;
+            const f = ingredientFactor(ri.quantity, ri.ingredient);
+            kcal += f * ri.ingredient.calories_per_100;
+            protein += f * ri.ingredient.protein_g_per_100;
+        }
+        for (const ai of e.addon_ingredients ?? []) {
+            if (!ai.ingredient) continue;
+            const f = ingredientFactor(ai.quantity, ai.ingredient);
+            kcal += f * ai.ingredient.calories_per_100;
+            protein += f * ai.ingredient.protein_g_per_100;
+        }
+        for (const ar of e.addon_recipes ?? []) {
+            for (const ri of ar.recipe?.ingredients ?? []) {
+                if (!ri.ingredient) continue;
+                const f = ingredientFactor(ri.quantity, ri.ingredient);
+                kcal += f * ri.ingredient.calories_per_100;
+                protein += f * ri.ingredient.protein_g_per_100;
+            }
+        }
+    }
+    return { kcal, protein };
+}
+
+function slotMacroValue(entries: MealPlanEntryContract[]): string {
+    const { kcal, protein } = macrosForEntries(entries);
+    const val = props.viewMode === 'kcal' ? kcal : protein;
+    return val > 0 ? Math.round(val).toString() : '';
+}
+
+function slotHeat(entries: MealPlanEntryContract[]): { background: string; color: string } {
+    if (props.viewMode === 'meals' || !props.globalMax)
+        return { background: '', color: '' };
+    const { kcal, protein } = macrosForEntries(entries);
+    const val = props.viewMode === 'kcal' ? kcal : protein;
+    if (!val) return { background: '', color: '' };
+    const t = Math.min(val / props.globalMax, 1);
+    const lightness = Math.round(88 - t * 58);
+    const saturation = Math.round(35 + t * 25);
+    return {
+        background: `hsl(120, ${saturation}%, ${lightness}%)`,
+        color: t > 0.55 ? 'white' : '#1b5e20'
+    };
+}
 
 const isPast = computed(() => dayjs(props.date).isBefore(dayjs(), 'day'));
 
@@ -85,53 +138,83 @@ const allSlots = computed(() => {
                     v-if="slot.perUser"
                     class="slot-row"
                     :class="{ 'extra-slot-row': slot.isExtra }"
+                    :style="
+                        viewMode !== 'meals' && slotHeat(slot.entries).background
+                            ? {
+                                  background: slotHeat(slot.entries).background,
+                                  color: slotHeat(slot.entries).color,
+                                  borderColor: 'transparent'
+                              }
+                            : {}
+                    "
                     @click="emit('slotClick', date, slot.entries)"
                 >
-                    <div
-                        v-for="(entry, pi) in slot.perUser"
-                        :key="pi"
-                        class="slot-part"
-                        :class="{ 'slot-part-divider': pi > 0, 'slot-part-empty': !entry }"
-                        :style="
-                            !slot.isExtra && entry?.recipe?.image_url
-                                ? {
-                                      backgroundImage: `url(${entry.recipe.image_url})`,
-                                      backgroundSize: 'cover',
-                                      backgroundPosition: 'center'
-                                  }
-                                : {}
-                        "
-                    >
-                        <span
-                            v-if="entry?.addon_ingredients?.length || entry?.addon_recipes?.length"
-                            class="addon-dot"
-                            :class="{ 'addon-dot-red': slot.isExtra }"
-                            >+</span
+                    <template v-if="viewMode === 'meals'">
+                        <div
+                            v-for="(entry, pi) in slot.perUser"
+                            :key="pi"
+                            class="slot-part"
+                            :class="{ 'slot-part-divider': pi > 0, 'slot-part-empty': !entry }"
+                            :style="
+                                !slot.isExtra && entry?.recipe?.image_url
+                                    ? {
+                                          backgroundImage: `url(${entry.recipe.image_url})`,
+                                          backgroundSize: 'cover',
+                                          backgroundPosition: 'center'
+                                      }
+                                    : {}
+                            "
                         >
-                    </div>
+                            <span
+                                v-if="
+                                    entry?.addon_ingredients?.length || entry?.addon_recipes?.length
+                                "
+                                class="addon-dot"
+                                :class="{ 'addon-dot-red': slot.isExtra }"
+                                >+</span
+                            >
+                        </div>
+                    </template>
+                    <div v-else class="slot-macro">{{ slotMacroValue(slot.entries) }}</div>
                 </div>
                 <!-- Filled single-entry regular slot -->
                 <MealSlot
                     v-else-if="slot.entries.length === 1 && !slot.isExtra"
                     :entry="slot.entries[0]"
+                    :viewMode="viewMode"
+                    :macroValue="slotMacroValue(slot.entries)"
+                    :heatBackground="slotHeat(slot.entries).background"
+                    :heatTextColor="slotHeat(slot.entries).color"
                     @click="emit('slotClick', date, slot.entries)"
                 />
                 <!-- Filled extra slot (no recipe image) -->
                 <div
                     v-else-if="slot.entries.length > 0"
                     class="slot-row extra-slot-row"
+                    :style="
+                        viewMode !== 'meals' && slotHeat(slot.entries).background
+                            ? {
+                                  background: slotHeat(slot.entries).background,
+                                  color: slotHeat(slot.entries).color,
+                                  borderColor: 'transparent'
+                              }
+                            : {}
+                    "
                     @click="emit('slotClick', date, slot.entries)"
                 >
-                    <div class="slot-part">
-                        <span
-                            v-if="
-                                slot.entries[0]?.addon_ingredients?.length ||
-                                slot.entries[0]?.addon_recipes?.length
-                            "
-                            class="addon-dot addon-dot-red"
-                            >+</span
-                        >
-                    </div>
+                    <template v-if="viewMode === 'meals'">
+                        <div class="slot-part">
+                            <span
+                                v-if="
+                                    slot.entries[0]?.addon_ingredients?.length ||
+                                    slot.entries[0]?.addon_recipes?.length
+                                "
+                                class="addon-dot addon-dot-red"
+                                >+</span
+                            >
+                        </div>
+                    </template>
+                    <div v-else class="slot-macro">{{ slotMacroValue(slot.entries) }}</div>
                 </div>
                 <!-- Empty slot -->
                 <div
@@ -193,6 +276,15 @@ const allSlots = computed(() => {
     flex: 1;
     cursor: pointer;
     position: relative;
+}
+
+.slot-macro {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 600;
 }
 
 .addon-dot {
