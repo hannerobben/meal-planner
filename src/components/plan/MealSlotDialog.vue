@@ -137,7 +137,7 @@ const recipeOptions = computed(() => {
     const notRecommended = base
         .filter((r) => r.not_suggested)
         .map((r) => ({ label: r.name, value: r.id, notRecommended: true }));
-    const groups: { label: string; items: { label: string; value: string }[] }[] = [
+    const groups: { label: string; items: { label: string; value: string; notRecommended: boolean }[] }[] = [
         { label: '', items: recommended }
     ];
     if (notRecommended.length) {
