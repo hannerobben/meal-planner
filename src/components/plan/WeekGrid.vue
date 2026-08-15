@@ -114,7 +114,7 @@ function entriesForDate(date: string) {
     </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .week-grid-card {
     background: white;
     border-radius: 12px;
@@ -129,8 +129,9 @@ function entriesForDate(date: string) {
     justify-content: center;
 
     :deep(.p-selectbutton .p-togglebutton) {
-        padding: 2px 10px;
-        font-size: 0.75rem;
+        padding: 1px 4px;
+        font-size: 0.65rem;
+        min-width: 0;
     }
 }
 

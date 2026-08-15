@@ -407,7 +407,7 @@ function macrosForDate(date: string) {
     display: flex;
     gap: 10px;
     padding: 0 12px;
-    margin-top: 12px;
+    margin-top: 8px;
 }
 
 .macro-cell {
