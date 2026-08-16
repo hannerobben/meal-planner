@@ -24,10 +24,10 @@ watch(
 const macros = computed(() => {
     const totals = sumMacros(props.recipe?.ingredients ?? []);
     return {
-        calories: Math.round(totals.calories * portions.value),
-        protein_g: Math.round(totals.protein_g * portions.value * 10) / 10,
-        carbs_g: Math.round(totals.carbs_g * portions.value * 10) / 10,
-        fat_g: Math.round(totals.fat_g * portions.value * 10) / 10
+        calories: Math.round(totals.calories),
+        protein_g: Math.round(totals.protein_g * 10) / 10,
+        carbs_g: Math.round(totals.carbs_g * 10) / 10,
+        fat_g: Math.round(totals.fat_g * 10) / 10
     };
 });
 </script>
