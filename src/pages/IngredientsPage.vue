@@ -520,5 +520,6 @@ async function saveNew() {
     position: absolute !important;
     top: 3px;
     right: 12px;
+    z-index: 100;
 }
 </style>
