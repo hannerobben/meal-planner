@@ -49,7 +49,7 @@ const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
                 </span>
             </div>
             <div class="icons">
-                <i v-if="recipe.not_suggested" class="pi pi-times-circle" />
+                <span v-if="recipe.not_suggested" class="dot dot-red" />
                 <i v-if="recipe.is_addon" class="pi pi-th-large" />
             </div>
         </div>
@@ -162,6 +162,16 @@ const totals = computed(() => sumMacros(props.recipe.ingredients ?? []));
     i {
         font-size: 1.1em;
         color: #aaa;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .dot-red {
+        background: #e33;
     }
 }
 </style>
